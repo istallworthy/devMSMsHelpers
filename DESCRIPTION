@@ -1,46 +1,23 @@
 Package: devMSMs
-Type: Package
-Title: Tools for Conducting Marginal Structural Models with Developmental Data
+Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
-Authors@R: c(person("Isabella", "Stallworthy",
-            email = "istall@seas.upenn.edu",
-            role = c("aut", "cre")),
-            person("Meriah", "DeJoseph",
-            email = "meriahd@stanford.edu",
-            role = c("aut")),
-            person("Emily", "Padrutt",
-            email = "padru004@umn.edu",
-            role = c("aut")),
-            person("Noah", "Greifer",
-            email = "ngreifer@iq.harvard.edu",
-            role = c("aut")),
-            person("Daniel", "Berry",
-            email = "dberry@umn.edu",
-            role = c("aut")))
-Description: Functions for preparing, assessing, and implementing MSMS.
-License: GPL-3
+Authors@R: 
+    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: What the package does (one paragraph).
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
 Encoding: UTF-8
-LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.2
 Imports:
+    doRNG,
     dplyr,
-    WeightIt,
-    marginaleffects,
-    tidyr,
-    stats,
-    ggplot2,
-    matrixStats,
-    plyr,
-    knitr,
-    survey,
-    jtools,
-    mice,
-    stargazer,
-    gtools,
-    cobalt,
-    stringr
-Suggests: 
-    testthat (>= 3.0.0)
-Config/testthat/edition: 3
-URL: https://istallworthy.github.io/devMSMs/
+    foreach,
+    knitr, 
+    mice, 
+    missMethods,
+    parallel,
+    purrr,
+    tibble,
+    tidyr
