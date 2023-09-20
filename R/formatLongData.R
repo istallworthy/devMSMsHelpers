@@ -1,6 +1,14 @@
 
 #' Formats long data
 #'
+#' @importFrom dplyr group_by
+#' @importFrom dplyr summarize_at
+#' @importFrom dplyr %>%
+#' @importFrom dplyr filter
+#' @importFrom knitr kable
+#' @importFrom kableExtra kable_styling
+#' @importFrom kableExtra save_kable
+#' @importFrom psych describe
 #' @param home_dir path to home directory
 #' @param data dataframe in long format
 #' @param exposure name of exposure variable
@@ -80,7 +88,6 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   options(readr.num_columns = 0)
 
 
-
   # Reading and formatting LONG dataset
   if (!is.na(time_var)){
     colnames(data)[colnames(data) == time_var] <- "WAVE" # Assigning time variable
@@ -96,7 +103,7 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   }
 
   if (which(colnames(data) == "ID") != 1){
-    data <- data[,which(colnames(data) == "ID"):ncol(data)]
+    data <- data[, which(colnames(data) == "ID"):ncol(data)]
   }
 
   # Exposure summary
