@@ -18,6 +18,9 @@ Imports:
     mice, 
     missMethods,
     parallel,
+    doParallel,
     purrr,
     tibble,
-    tidyr
+    tidyr,
+    kableExtra,
+    ggcorrplot

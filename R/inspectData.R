@@ -1,6 +1,14 @@
 
 #' Inspect long/wide/imputed data
 #'
+#' @importFrom mice complete
+#' @importFrom stats reshape
+#' @importFrom glue glue
+#' @importFrom dplyr arrange
+#' @importFrom dplyr summarize
+#' @importFrom dplyr group_by
+#' @importFrom dplyr arrange
+#' @importFrom ggcorrplot ggcorrplot
 #' @param data data in wide format as: a data frame, list of imputed data
 #'   frames, or mids object
 #' @param home_dir (optional) path to home directory (required if save.out = TRUE)
@@ -109,15 +117,13 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, tv
     stop("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", call. = FALSE)
   }
 
-
-
   ID <- "ID"
   time_invar_covars <- ti_confounders
   time_var_covars <- tv_confounders
   time_pts <- as.numeric(sapply(strsplit(tv_confounders[grepl(exposure, tv_confounders)] , "\\."), "[",2))
 
   if (mice::is.mids(data)){
-    data <-as.data.frame(mice::complete(data,1))
+    data <-as.data.frame(mice::complete(data, 1))
   }
 
   else if (inherits(data, "list")) { #just inspects frist imputed dataset
@@ -133,7 +139,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, tv
                                 direction = "wide")
 
     #removing all NA cols (i.e., when data were not collected)
-    data_wide <- data_wide[,colSums(is.na(data_wide)) < nrow(data_wide)]
+    data_wide <- data_wide[, colSums(is.na(data_wide)) < nrow(data_wide)]
     data <- data_wide
   }
 

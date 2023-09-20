@@ -12,11 +12,14 @@
 #' @importFrom tidyr complete
 #' @importFrom knitr kable
 #' @importFrom parallel detectCores
+#' @importFrom doParallel registerDoParallel
 #' @importFrom doRNG %dorng%
 #' @importFrom purrr map_dfr
 #' @importFrom foreach getDoParWorkers
 #' @importFrom foreach getDoParName
 #' @importFrom missMethods delete_MAR_1_to_x
+#' @importFrom glue glue
+#' @importFrom tibble tibble
 #' @seealso {[mice::mice()],
 #'   <https://cran.r-project.org/web/packages/mice/index.html>}
 #' @param data data in wide format
