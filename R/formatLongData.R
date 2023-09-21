@@ -144,7 +144,7 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   }
 
 
-  data$ID <- as.factor(data$ID)
+  data$ID <- as.numeric(data$ID)
 
   if(!is.null(factor_confounders)){
     if (sum(factor_confounders %in% colnames(data)) < length(factor_confounders)) {
@@ -154,7 +154,7 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
     # Formatting factor covariates
     data[, factor_confounders] <- lapply(data[, factor_confounders], as.factor)
     # Formatting numeric covariates
-    numeric_vars <- colnames(data)[!colnames(data) %in% c(factor_confounders, "ID")]
+    numeric_vars <- colnames(data)[!colnames(data) %in% c(factor_confounders)]
     data[, numeric_vars] <- lapply(data[, numeric_vars], as.numeric)
   }
 
