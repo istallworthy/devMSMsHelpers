@@ -48,7 +48,6 @@
 #'                                    exposure = "A",
 #'                                    exposure_time_pts = c(1, 2, 3),
 #'                                    outcome = "D.3",
-#'                                    tv_confounders = c("A.1", "A.2", "A.3", "B.1", "B.2", "B.3"),
 #'                                    time_var = "time",
 #'                                    id_var = NA,
 #'                                    missing = NA,
@@ -56,7 +55,7 @@
 #'                                    save.out = FALSE)
 
 
-formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome, tv_confounders, time_var = NA, id_var = NA, missing = NA,
+formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA,
                            factor_confounders = NULL, save.out = TRUE){
 
   if(save.out){
@@ -80,11 +79,8 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   if (missing(exposure_time_pts)){
     stop("Please supply the exposure time points at which you wish to create weights.", call. = FALSE)
   }
-  if (missing(tv_confounders)){
-    stop("Please supply a list of time-varying confounders.", call. = FALSE)
-  }
 
-  time_varying_covariates <- tv_confounders
+
   options(readr.num_columns = 0)
 
 
