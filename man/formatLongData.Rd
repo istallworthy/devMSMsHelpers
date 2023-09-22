@@ -10,7 +10,6 @@ formatLongData(
   exposure,
   exposure_time_pts,
   outcome,
-  tv_confounders,
   time_var = NA,
   id_var = NA,
   missing = NA,
@@ -30,9 +29,6 @@ created/assessed that correspond to time points when exposure was measured}
 
 \item{outcome}{name of outcome variable with ".timepoint" suffix}
 
-\item{tv_confounders}{list of time-varying confounders with ".timepoint"
-suffix}
-
 \item{time_var}{(optional) variable name in original dataset demarcating time}
 
 \item{id_var}{(optional) variable name in original dataset demarcating ID}
@@ -44,6 +40,9 @@ suffix}
 
 \item{save.out}{(optional) TRUE or FALSE indicator to save output and
 intermediary output locally (default is TRUE)}
+
+\item{tv_confounders}{list of time-varying confounders with ".timepoint"
+suffix}
 }
 \value{
 formatted long dataset
@@ -72,7 +71,6 @@ test_long_format <- formatLongData(data = test_long,
                                    exposure = "A",
                                    exposure_time_pts = c(1, 2, 3),
                                    outcome = "D.3",
-                                   tv_confounders = c("A.1", "A.2", "A.3", "B.1", "B.2", "B.3"),
                                    time_var = "time",
                                    id_var = NA,
                                    missing = NA,
