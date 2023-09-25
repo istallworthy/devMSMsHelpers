@@ -1,15 +1,6 @@
 
 #' Inspect long/wide/imputed data
 #'
-#' @importFrom mice complete
-#' @importFrom stats reshape
-#' @importFrom glue glue
-#' @importFrom dplyr arrange
-#' @importFrom dplyr summarize
-#' @importFrom dplyr group_by
-#' @importFrom dplyr arrange
-#' @importFrom dplyr %>%
-#' @importFrom ggcorrplot ggcorrplot
 #' @param data data in wide format as: a data frame, list of imputed data
 #'   frames, or mids object
 #' @param home_dir (optional) path to home directory (required if save.out = TRUE)
@@ -181,14 +172,25 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   # Format for table output to visualize available covariates by time point
   covar_table <- data.frame(variable = sapply(strsplit(all_potential_covariates, "\\."), "[", 1),
-                            time_pt = sapply(strsplit(all_potential_covariates, "\\."), "[", 2)) %>%
-    dplyr::arrange(time_pt, variable) %>%
-    dplyr::group_by(time_pt) %>%
-    dplyr::summarize(variable = toString(variable))
+                            time_pt = sapply(strsplit(all_potential_covariates, "\\."), "[", 2))
+  covar_table <- covar_table[order(covar_table$time_pt, covar_table$variable), ]
+  
+  if(sum(is.na(covar_table$time_pt)) > nrow(covar_table)){
+    covar_table <- aggregate(variable ~ time_pt, data = covar_table,
+                             FUN = function(x) variable = toString(x))
+  }
+  
+  # dplyr::arrange(time_pt, variable) %>%
+  # dplyr::group_by(time_pt) %>%
+  # dplyr::summarize(variable = toString(variable))
+  # 
+  
   
   
   if(save.out){
-    write.csv(covar_table, glue::glue("{home_dir}/{exposure}-{outcome}_covariates_considered_by_time_pt.csv"),
+    # write.csv(covar_table, glue::glue("{home_dir}/{exposure}-{outcome}_covariates_considered_by_time_pt.csv"),
+    #           row.names = FALSE)
+    write.csv(covar_table, paste0(home_dir, "/", exposure, "-", outcome, "_covariates_considered_by_time_pt.csv"),
               row.names = FALSE)
   }
   
@@ -216,18 +218,21 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     test[seq_len(nrow(test)), ncol(test) + 1] <- NumVars
     
     if(save.out){
-      write.csv(test, glue::glue("{home_dir}/{exposure}-{outcome}_matrix_of_covariates_considered_by_time_pt.csv"),
+      write.csv(test, paste0(home_dir, "/", exposure, "-", outcome, "_matrix_of_covariates_considered_by_time_pt.csv"),
                 row.names = TRUE)
       if(verbose){
-        print(glue::glue("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for {exposure} and {outcome}."), "\n")
+        print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.", "\n")
       }
     }
   }
   
   if(verbose){
     #-2 to exclude ID and WAVE
-    print(glue::glue("USER ALERT: Below are the {as.character(length(all_potential_covariates) - 2)} variables spanning {unique_vars - 2} unique domains that will be treated as confounding variables for the relation between {exposure} and {outcome}."),
-          "Please inspect this list carefully. It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point.", "\n")
+    print(paste0("USER ALERT: Below are the ", as.character(length(all_potential_covariates)), " variables spanning ", 
+                 unique_vars, " unique domains that will be treated as confounding variables for the relation between ", 
+                 exposure, " and ", outcome, "."))
+    print("Please inspect this list carefully. It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point." 
+          )
     print(all_potential_covariates[!(all_potential_covariates %in% c(ID))])
   }
   
@@ -263,8 +268,9 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   # Creates final dataset with only relevant variables
   covariates_to_include <- covariates_to_include[order(covariates_to_include)]
   variables_to_include <- unique(c(outcome, covariates_to_include, time_var_covars))
-  data2 <- data %>%
-    select(all_of(variables_to_include))
+  # data2 <- data %>%
+  #   select(all_of(variables_to_include))
+  data2 <- data[, variables_to_include]
   
   # Makes correlation table
   corr_matrix <- cor(as.data.frame(lapply(data2[, colnames(data2) != ID],
@@ -291,17 +297,22 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   
   # Exposure summary
-  exposure_summary <- data %>%
-    dplyr:: select(colnames(data)[grepl(exposure, colnames(data))])
-  exposure_summary <- sapply(exposure_summary, as.numeric)
-  exposure_summary <- psych::describe(exposure_summary, fast = TRUE)
+  # exposure_summary <- data %>%
+  #   dplyr:: select(colnames(data)[grepl(exposure, colnames(data))])
+  # exposure_summary <- sapply(exposure_summary, as.numeric)
+  # exposure_summary <- psych::describe(exposure_summary, fast = TRUE)
+  
+  exp_names <- colnames(data)[(grepl(exposure, colnames(data)))]
+  exposure_summary <- data[, exp_names]
+  exposure_summary <- summary(exposure_summary)
+
   
   
   if (save.out){
-    knitr::kable(exposure_summary, caption = paste0("Summary of ", exposure, " Exposure Information"),
-                 format = 'html') %>%
-      kableExtra::kable_styling() %>%
-      kableExtra::save_kable(file = file.path(home_dir, paste0("/", exposure, "_exposure_info.html")))
+    k <- knitr::kable(exposure_summary, caption = paste0("Summary of ", exposure, " Exposure Information"),
+                      format = 'html') 
+    # kableExtra::kable_styling() %>%
+    kableExtra::save_kable(k, file = file.path(home_dir, paste0("/", exposure, "_exposure_info.html")))
     if(verbose){
       cat(knitr::kable(exposure_summary, caption = paste0("Summary of ", exposure, " Exposure Information"),
                        format = 'pipe'), sep = "\n")
@@ -329,15 +340,15 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   }
   
   # Outcome summary
-  outcome_summary <- data[, grepl(sapply(strsplit(outcome, "\\."),
-                                         "[", 1), colnames(data))]
-  outcome_summary <- psych::describe(outcome_summary, fast = TRUE)
+  
+  out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(outcome_summary)))]
+  outcome_summary <- data[, out_names]
+  outcome_summary <- summary(outcome_summary)
   
   if(save.out){
-    knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ",
-                                                   sapply(strsplit(outcome, "\\."), "[", 1), " Information"), format = 'html') %>%
-      kableExtra::kable_styling() %>%
-      kableExtra::save_kable(file = file.path(home_dir, paste0("/", sapply(strsplit(outcome, "\\."), "[", 1), "_outcome_info.html")))
+    k <-  knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ",
+                                                         sapply(strsplit(outcome, "\\."), "[", 1), " Information"), format = 'html') 
+    kableExtra::save_kable(k, file = file.path(home_dir, paste0("/", sapply(strsplit(outcome, "\\."), "[", 1), "_outcome_info.html")))
     
     if (verbose){
       cat(knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ",

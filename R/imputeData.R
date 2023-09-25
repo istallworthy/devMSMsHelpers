@@ -2,24 +2,6 @@
 #' processing to speed up
 #'
 #' @export
-#' @importFrom mice mice
-#' @importFrom mice ibind
-#' @importFrom mice complete
-#' @importFrom tibble tibble
-#' @importFrom dplyr arrange
-#' @importFrom dplyr filter
-#' @importFrom dplyr mutate
-#' @importFrom tidyr complete
-#' @importFrom knitr kable
-#' @importFrom parallel detectCores
-#' @importFrom doParallel registerDoParallel
-#' @importFrom doRNG %dorng%
-#' @importFrom purrr map_dfr
-#' @importFrom foreach getDoParWorkers
-#' @importFrom foreach getDoParName
-#' @importFrom missMethods delete_MAR_1_to_x
-#' @importFrom glue glue
-#' @importFrom tibble tibble
 #' @seealso {[mice::mice()],
 #'   <https://cran.r-project.org/web/packages/mice/index.html>}
 #' @param data data in wide format
@@ -102,15 +84,15 @@ imputeData <- function(data, m = 5, method = "rf", home_dir = NA, exposure, outc
   if (read_imps_from_file == "yes") {
     imputed_datasets <- list()
 
-    if (!file.exists(glue::glue("{home_dir}/imputations/{exposure}-{outcome}_all_imp.rds"))) {
+    if (!file.exists(paste0(home_dir, "/imputations/", exposure, "-", outcome, "_all_imp.rds"))) {
       stop("Imputations have not been created and saved locally. Please set 'read_imps_from_file' == 'no' and re-run.", call. = FALSE)
     }
 
-    imp <- readRDS(glue::glue("{home_dir}/imputations/{exposure}-{outcome}_all_imp.rds"))
+    imp <- readRDS(paste0(home_dir, "/imputations/", exposure, "-", outcome, "_all_imp.rds"))
     imputed_datasets <- imp
 
     cat("\n")
-    cat(glue::glue("Reading in {imputed_datasets$m} imputations from the local folder."))
+    cat(paste0("Reading in ", imputed_datasets$m, " imputations from the local folder."))
     cat("\n")
     return(imputed_datasets)
 
@@ -124,7 +106,7 @@ imputeData <- function(data, m = 5, method = "rf", home_dir = NA, exposure, outc
     imp_method <- method
     data_to_impute <- tibble::tibble(data)
 
-    cat(glue::glue("Creating {m} imputed datasets using the {imp_method} imputation method in mice. This may take some time to run."))
+    cat(paste0("Creating ", m, " imputed datasets using the ", imp_method, " imputation method in mice. This may take some time to run."))
     cat("\n")
 
     if (para_proc){
@@ -152,7 +134,7 @@ imputeData <- function(data, m = 5, method = "rf", home_dir = NA, exposure, outc
     }
 
     if(save.out){
-      saveRDS(imputed_datasets, glue::glue("{home_dir}/imputations/{exposure}-{outcome}_all_imp.rds"))
+      saveRDS(imputed_datasets, paste0(home_dir, "/imputations/", exposure, "-", outcome, "_all_imp.rds"))
     }
 
     # Print warnings
@@ -164,7 +146,7 @@ imputeData <- function(data, m = 5, method = "rf", home_dir = NA, exposure, outc
       # Save out individual imputed datasets
       for (k in seq_len(m)) {
         write.csv(mice::complete(imputed_datasets, k),
-                  file = glue::glue("{home_dir}/imputations/{exposure}-{outcome}_imp{k}.csv"))
+                  file = paste0(home_dir, "/imputations/", exposure, "-", outcome, "_imp", k, ".csv"))
       }
       cat("See the 'imputations/' folder for a .csv file of each imputed dataset and an .rds file of all imputed datasets", "\n")
     }

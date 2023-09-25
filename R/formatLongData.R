@@ -1,14 +1,6 @@
 
 #' Formats long data
-#'
-#' @importFrom dplyr group_by
-#' @importFrom dplyr summarize_at
-#' @importFrom dplyr %>%
-#' @importFrom dplyr filter
-#' @importFrom knitr kable
-#' @importFrom kableExtra kable_styling
-#' @importFrom kableExtra save_kable
-#' @importFrom psych describe
+
 #' @param home_dir path to home directory
 #' @param data dataframe in long format
 #' @param exposure name of exposure variable
@@ -57,7 +49,7 @@
 
 formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA,
                            factor_confounders = NULL, save.out = TRUE){
-
+  
   if(save.out){
     if (missing(home_dir)){
       stop("Please supply a home directory.", call. = FALSE)
@@ -79,80 +71,99 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   if (missing(exposure_time_pts)){
     stop("Please supply the exposure time points at which you wish to create weights.", call. = FALSE)
   }
-
-
+  
+  
   options(readr.num_columns = 0)
-
-
+  
+  
   # Reading and formatting LONG dataset
   if (!is.na(time_var)){
     colnames(data)[colnames(data) == time_var] <- "WAVE" # Assigning time variable
   }
-
+  
   if(!is.na(id_var)){
     colnames(data)[colnames(data) == id_var] <- "ID" # Assigning time variable
   }
-
+  
   if(!is.na(missing)){
     # data[data == missing] <- NA # Makes NA the missingness indicator
     is.na(data[data == missing]) <- TRUE
   }
-
+  
   if (which(colnames(data) == "ID") != 1){
     data <- data[, which(colnames(data) == "ID"):ncol(data)]
   }
-
+  
   # Exposure summary
-  exposure_summary <- data %>%
-    dplyr::filter(WAVE %in% exposure_time_pts) %>%
-    dplyr::group_by(WAVE) %>%
-    dplyr::summarize_at(dplyr::vars(all_of(exposure)),
-                        list(mean = mean, sd = sd, min = min, max = max), na.rm = TRUE)
-
+  # exposure_summary <- data %>%
+  #   dplyr::filter(WAVE %in% exposure_time_pts) %>%
+  #   dplyr::group_by(WAVE) %>%
+  #   dplyr::summarize_at(dplyr::vars(all_of(exposure)),
+  #                       list(mean = mean, sd = sd, min = min, max = max), na.rm = TRUE)
+  
+  exposure_summary <- data[data$WAVE %in% exposure_time_pts, ]
+  exp_names <- colnames(exposure_summary)[(grepl(exposure, colnames(exposure_summary)))]
+  exp_names <- exp_names[!exp_names %in% "WAVE"]
+  exposure_summary <- aggregate(as.formula(paste(exp_names, "WAVE", sep = " ~ ")), data = exposure_summary,
+                                FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
+  exposure_summary <- do.call(data.frame, exposure_summary)
+  colnames(exposure_summary) <- c("WAVE", "mean", "sd", "min", "max")
+  
+  
   cat(knitr::kable(exposure_summary, caption = paste0("Summary of ", exposure,
                                                       " Exposure Information"), format = 'pipe'), sep = "\n")
-
+  cat("\n")
+  
   if(save.out){
-    knitr::kable(exposure_summary, caption = paste0("Summary of ", exposure, " Exposure Information"), format = 'html') %>%
-      kableExtra::kable_styling() %>%
-      kableExtra::save_kable(file = file.path(home_dir, paste0(exposure, "_exposure_info.html")))
-
+    k <-  knitr::kable(exposure_summary, caption = paste0("Summary of ", exposure, " Exposure Information"), format = 'html')
+    # 
+    # kableExtra::kable_styling() %>%
+    kableExtra::save_kable(k, file = file.path(home_dir, paste0(exposure, "_exposure_info.html")))
     cat(paste0(exposure, " exposure descriptive statistics have now been saved in the home directory"), "\n")
     cat("\n")
   }
-
-
+  
+  
   # Outcome summary
   outcome_summary <- data[, !colnames(data) %in% "ID"]
-  outcome_summary <- outcome_summary %>% select(contains(sapply(strsplit(outcome, "\\."),
-                                                               "[", 1)))
-  outcome_summary <- psych::describe(outcome_summary, fast = TRUE)
+  out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(outcome_summary)))]
+  out_names <- out_names[!out_names %in% "WAVE"]
+  # outcome_summary <- outcome_summary %>% select(contains(sapply(strsplit(outcome, "\\."),
+  #                                                               "[", 1))
 
+  outcome_summary <- aggregate(as.formula(paste(out_names, "WAVE", sep = " ~ ")), data = outcome_summary,
+                                FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
+  outcome_summary <- do.call(data.frame, outcome_summary)
+  colnames(outcome_summary) <- c("WAVE", "mean", "sd", "min", "max")
+  
+  # outcome_summary <- psych::describe(outcome_summary, fast = TRUE)
+  
   cat(knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ", outcome, " Information"),
                    format = 'pipe'), sep = "\n")
-
+  cat("\n")
+  
   if(save.out){
-    knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ", outcome, " Information"), format = 'html') %>%
-      kableExtra::kable_styling() %>%
-      kableExtra::save_kable(file = file.path(home_dir, paste0(outcome, "_outcome_info.html")))
-
+    k <-  knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ", outcome, " Information"), format = 'html') 
+    # kableExtra::kable_styling() %>%
+    kableExtra::save_kable(k, file = file.path(home_dir, paste0(outcome, "_outcome_info.html")))
+    
     cat(paste0(outcome, " outcome descriptive statistics have now been saved in the home directory"), "\n")
   }
-
-
+  
+  
   data$ID <- as.numeric(data$ID)
-
+  
   if(!is.null(factor_confounders)){
     if (sum(factor_confounders %in% colnames(data)) < length(factor_confounders)) {
       stop('Please provide factor covariates that correspond to columns in your data when creating the msm object',
            call. = FALSE)
     }
     # Formatting factor covariates
-    data[, factor_confounders] <- lapply(data[, factor_confounders], as.factor)
+    data[, factor_confounders] <- sapply(data[, factor_confounders], as.factor)
     # Formatting numeric covariates
     numeric_vars <- colnames(data)[!colnames(data) %in% c(factor_confounders)]
     data[, numeric_vars] <- lapply(data[, numeric_vars], as.numeric)
   }
-
+  
   as.data.frame(data)
 }
