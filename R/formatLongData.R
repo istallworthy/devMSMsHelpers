@@ -7,8 +7,6 @@
 #' @param exposure_time_pts list of integers at which weights will be
 #'   created/assessed that correspond to time points when exposure was measured
 #' @param outcome name of outcome variable with ".timepoint" suffix
-#' @param tv_confounders list of time-varying confounders with ".timepoint"
-#'   suffix
 #' @param time_var (optional) variable name in original dataset demarcating time
 #' @param id_var (optional) variable name in original dataset demarcating ID
 #' @param missing (optional) indicator for missing data in original dataset
@@ -54,6 +52,9 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
     if (missing(home_dir)){
       stop("Please supply a home directory.", call. = FALSE)
     }
+    else if(!is.character(home_dir)){
+      stop("Please provide a valid home directory path as a string if you wish to save output locally.", call. = FALSE)
+    }
     else if (!dir.exists(home_dir)) {
       stop('Please provide a valid home directory.', call. = FALSE)
     }
@@ -64,17 +65,33 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   }
   if (missing(exposure)){
     stop("Please supply a single exposure.", call. = FALSE)
+  } 
+  else if(!is.character(exposure) | length(exposure) != 1){
+    stop("Please supply a single exposure as a character.", call. = FALSE)
   }
+  
   if (missing(outcome)){
     stop("Please supply a single outcome.", call. = FALSE)
   }
+  else if(!is.character(outcome) | length(outcome) != 1){
+    stop("Please supply a single outcome as a character.", call. = FALSE)
+  }
+  
   if (missing(exposure_time_pts)){
     stop("Please supply the exposure time points at which you wish to create weights.", call. = FALSE)
   }
-  
+  else if(!is.numeric(exposure_time_pts)){
+    stop("Please supply a list of exposure time points as integers.", call. = FALSE)
+  }
+  if(!is.logical(save.out)){
+    stop("Please set save.out to either TRUE or FALSE.", call. = FALSE)
+  }
+  else if(length(save.out) != 1){
+    stop("Please provide a single TRUE or FALSE value to save.out.", call. = FALSE)
+  }
   
   options(readr.num_columns = 0)
-  
+
   
   # Reading and formatting LONG dataset
   if (!is.na(time_var)){
@@ -95,12 +112,6 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   }
   
   # Exposure summary
-  # exposure_summary <- data %>%
-  #   dplyr::filter(WAVE %in% exposure_time_pts) %>%
-  #   dplyr::group_by(WAVE) %>%
-  #   dplyr::summarize_at(dplyr::vars(all_of(exposure)),
-  #                       list(mean = mean, sd = sd, min = min, max = max), na.rm = TRUE)
-  
   exposure_summary <- data[data$WAVE %in% exposure_time_pts, ]
   exp_names <- colnames(exposure_summary)[(grepl(exposure, colnames(exposure_summary)))]
   exp_names <- exp_names[!exp_names %in% "WAVE"]
@@ -109,16 +120,20 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   exposure_summary <- do.call(data.frame, exposure_summary)
   colnames(exposure_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
-  
-  cat(knitr::kable(exposure_summary, caption = paste0("Summary of ", exposure,
-                                                      " Exposure Information"), format = 'pipe'), sep = "\n")
+  cat(knitr::kable(exposure_summary, 
+                   caption =sprintf("Summary of %s Exposure Information", 
+                             exposure),
+                   format = 'pipe'), sep = "\n")
   cat("\n")
   
   if(save.out){
-    k <-  knitr::kable(exposure_summary, caption = paste0("Summary of ", exposure, " Exposure Information"), format = 'html')
-    # 
-    # kableExtra::kable_styling() %>%
-    kableExtra::save_kable(k, file = file.path(home_dir, paste0(exposure, "_exposure_info.html")))
+    k <-  knitr::kable(exposure_summary, 
+                       caption = sprintf("Summary of %s Exposure Information", 
+                                         exposure),
+                       format = 'html')
+    
+    kableExtra::save_kable(k, 
+                           file = file.path(home_dir, paste0(exposure, "_exposure_info.html")))
     cat(paste0(exposure, " exposure descriptive statistics have now been saved in the home directory"), "\n")
     cat("\n")
   }
@@ -128,22 +143,22 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   outcome_summary <- data[, !colnames(data) %in% "ID"]
   out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(outcome_summary)))]
   out_names <- out_names[!out_names %in% "WAVE"]
-  # outcome_summary <- outcome_summary %>% select(contains(sapply(strsplit(outcome, "\\."),
-  #                                                               "[", 1))
 
   outcome_summary <- aggregate(as.formula(paste(out_names, "WAVE", sep = " ~ ")), data = outcome_summary,
                                 FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
   outcome_summary <- do.call(data.frame, outcome_summary)
   colnames(outcome_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
-  cat(knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ", outcome, " Information"),
+  cat(knitr::kable(outcome_summary, 
+                   caption = paste0("Summary of Outcome ", outcome, " Information"),
                    format = 'pipe'), sep = "\n")
   cat("\n")
   
   if(save.out){
-    k <-  knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ", outcome, " Information"), format = 'html') 
-    # kableExtra::kable_styling() %>%
-    kableExtra::save_kable(k, file = file.path(home_dir, paste0(outcome, "_outcome_info.html")))
+    k <-  knitr::kable(outcome_summary, 
+                       caption = paste0("Summary of Outcome ", outcome, " Information"), format = 'html') 
+    kableExtra::save_kable(k, 
+                           file = file.path(home_dir, paste0(outcome, "_outcome_info.html")))
     
     cat(paste0(outcome, " outcome descriptive statistics have now been saved in the home directory"), "\n")
   }
@@ -153,7 +168,7 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   
   if(!is.null(factor_confounders)){
     if (sum(factor_confounders %in% colnames(data)) < length(factor_confounders)) {
-      stop('Please provide factor covariates that correspond to columns in your data when creating the msm object',
+      stop('Please provide factor covariates that correspond to columns in your data.',
            call. = FALSE)
     }
     # Formatting factor covariates

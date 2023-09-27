@@ -2,13 +2,14 @@
 #' processing to speed up
 #'
 #' @export
+#' @importFrom doRNG %dorng%
 #' @seealso {[mice::mice()],
 #'   <https://cran.r-project.org/web/packages/mice/index.html>}
 #' @param data data in wide format
 #' @param m (optional) integer number of imputed datasets (default is 5)
 #' @param method (optional) character string of imputation method from mice()
 #'   (default is random forest "rf")
-#' @param home_dir path to home directory
+#' @param home_dir path to home directory (required if save.out = TRUE)
 #' @param exposure name of exposure variable
 #' @param outcome name of outcome variable with ".timepoint" suffix
 #' @param para_proc (optional) TRUE/FALSE whether to do parallel processing
@@ -45,112 +46,158 @@
 
 imputeData <- function(data, m = 5, method = "rf", home_dir = NA, exposure, outcome, para_proc = TRUE,
                        read_imps_from_file = "no", save.out = TRUE) {
-
+  
   if (save.out | read_imps_from_file == "yes"){
     if (missing(home_dir)){
       stop("Please supply a home directory.", call. = FALSE)
+    }
+    else if(!is.character(home_dir)){
+      stop("Please provide a valid home directory path as a string if you wish to save output locally.", call. = FALSE)
     }
     else if (!dir.exists(home_dir)) {
       stop('Please provide a valid home directory.', call. = FALSE)
     }
   }
+  
   if (missing(data)){
-    stop("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
+    stop("Please supply data as a data frame in wide format.",
          call. = FALSE)
   }
+  else if (!is.data.frame(data)){
+    stop("Please supply data as a data frame in wide format.",
+         call. = FALSE)
+  }
+  
   if (missing(exposure)){
     stop("Please supply a single exposure.", call. = FALSE)
   }
+  else if(!is.character(exposure) | length(exposure) != 1){
+    stop("Please supply a single exposure as a character.", call. = FALSE)
+  }
+  
   if (missing(outcome)){
     stop("Please supply a single outcome.", call. = FALSE)
   }
-
-
-  if(!is.character(method)){
+  else if(!is.character(outcome) | length(outcome) != 1){
+    stop("Please supply a single outcome as a character.", call. = FALSE)
+  }
+  
+  if(!is.character(method) | length(method) != 1){
     stop("Please provide as a character a valid imputation method abbreviation.", call. = FALSE)
   }
-  if(!is.numeric(m)){
+  if(!is.numeric(m) | length(m) != 1){
     stop("Please provide an integer value number of imputations.", call. = FALSE)
   }
-
+  
+  if(!is.logical(save.out)){
+    stop("Please set save.out to either TRUE or FALSE.", call. = FALSE)
+  }
+  else if(length(save.out) != 1){
+    stop("Please provide a single TRUE or FALSE value to save.out.", call. = FALSE)
+  }
+  
   if (save.out | read_imps_from_file == "yes"){
     imp_dir <- file.path(home_dir, "imputations")
     if (!dir.exists(imp_dir)) {
       dir.create(imp_dir)
     }
   }
-
-
+  
+  
   if (read_imps_from_file == "yes") {
     imputed_datasets <- list()
-
-    if (!file.exists(paste0(home_dir, "/imputations/", exposure, "-", outcome, "_all_imp.rds"))) {
-      stop("Imputations have not been created and saved locally. Please set 'read_imps_from_file' == 'no' and re-run.", call. = FALSE)
+    
+    if (!file.exists(
+      # paste0(home_dir, "/imputations/", exposure, "-", outcome, "_all_imp.rds"))) 
+      sprintf("%s/imputations/%s-%s_all_imp.rds",
+              home_dir, exposure, outcome))) {
+      stop("Imputations have not been created and saved locally. 
+           Please set 'read_imps_from_file' == 'no' and re-run.", call. = FALSE)
     }
-
-    imp <- readRDS(paste0(home_dir, "/imputations/", exposure, "-", outcome, "_all_imp.rds"))
+    
+    imp <- readRDS( sprintf("%s/imputations/%s-%s_all_imp.rds",
+              home_dir, exposure, outcome))
     imputed_datasets <- imp
-
+    
     cat("\n")
-    cat(paste0("Reading in ", imputed_datasets$m, " imputations from the local folder."))
+    cat(sprintf("Reading in %s imputations from the local folder. \n",
+                imputed_datasets$m))
     cat("\n")
     return(imputed_datasets)
-
+    
   }
   else {
-
+    
     if (sum(duplicated(data$"ID")) > 0){
       stop("Please provide a wide dataset with a single row per ID.", call. = FALSE)
     }
-
+    
     imp_method <- method
     data_to_impute <- tibble::tibble(data)
-
-    cat(paste0("Creating ", m, " imputed datasets using the ", imp_method, " imputation method in mice. This may take some time to run."))
+    
+    cat(sprintf("Creating %s imputed datasets using the %s imputation method in mice.
+                This may take some time to run. \n",
+                m, imp_method))
     cat("\n")
-
+    
     if (para_proc){
       # Configure parallelization
-      nCores <- min(parallel::detectCores(), 8)
+      # nCores <- min(parallel::detectCores(), 8)
+      nCores <- 2 #apparently CRAN limits number of cores available to 2
       options(mc.cores = nCores)
       options(cores = nCores)
       doParallel::registerDoParallel(cores = nCores)
-
+      
       cat("### Using", foreach::getDoParWorkers(), "cores\n")
       cat("### Using", foreach::getDoParName(), "as the backend\n")
-
+      
       # Conducts imputations using parallelized execution cycling through m
       imputed_datasets <- foreach::foreach(i = seq_len(m), .combine = mice::ibind) %dorng% {
         cat("### Started iteration", i, "\n")
-        miceout <- mice::mice(data_to_impute, m = 1, method = imp_method, maxit = 0, #change maxit to default 5 after testing!!!
+        miceout <- mice::mice(data_to_impute, 
+                              m = 1, 
+                              method = imp_method,
+                              maxit = 0, #change maxit to default 5 after testing!!!
                               print = F)
         cat("### Completed iteration", i, "\n")
         miceout
       }
     }
     else{
-      imputed_datasets <- mice::mice(data_to_impute, m = m, method = imp_method, maxit = 0, #change maxit to default 5 after testing!!!
+      
+      imputed_datasets <- mice::mice(data_to_impute, 
+                                     m = m, 
+                                     method = imp_method, 
+                                     maxit = 0, #change maxit to default 5 after testing!!!
                                      print = F)
     }
-
+    
     if(save.out){
-      saveRDS(imputed_datasets, paste0(home_dir, "/imputations/", exposure, "-", outcome, "_all_imp.rds"))
+      saveRDS(imputed_datasets, 
+              sprintf("%s/imputations/%s-%s_all_imp.rds",
+                      home_dir, exposure, outcome))
     }
-
+    
     # Print warnings
-    cat("USER ALERT: Please view any logged events from the imputation below:", "\n")
-    cat(knitr::kable(imputed_datasets$loggedEvents, caption = "Logged Events from mice", format = 'pipe'), sep = "\n")
     cat("\n")
-
+    cat("USER ALERT: Please view any logged events from the imputation below:", "\n")
+    cat(knitr::kable(imputed_datasets$loggedEvents, 
+                     caption = "Logged Events from mice::mice", 
+                     format = 'pipe'), 
+        sep = "\n")
+    cat("\n")
+    
     if(save.out){
       # Save out individual imputed datasets
       for (k in seq_len(m)) {
+        
         write.csv(mice::complete(imputed_datasets, k),
-                  file = paste0(home_dir, "/imputations/", exposure, "-", outcome, "_imp", k, ".csv"))
+                  file = sprintf("%s/imputations/%s-%s_imp%s.csv",
+                            home_dir, exposure, outcome, k))
       }
       cat("See the 'imputations/' folder for a .csv file of each imputed dataset and an .rds file of all imputed datasets", "\n")
     }
-
+    
     imputed_datasets
   }
 }
