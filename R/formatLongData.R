@@ -136,8 +136,6 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   outcome_summary <- do.call(data.frame, outcome_summary)
   colnames(outcome_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
-  # outcome_summary <- psych::describe(outcome_summary, fast = TRUE)
-  
   cat(knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ", outcome, " Information"),
                    format = 'pipe'), sep = "\n")
   cat("\n")
