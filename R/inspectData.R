@@ -297,10 +297,6 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   
   # Exposure summary
-  # exposure_summary <- data %>%
-  #   dplyr:: select(colnames(data)[grepl(exposure, colnames(data))])
-  # exposure_summary <- sapply(exposure_summary, as.numeric)
-  # exposure_summary <- psych::describe(exposure_summary, fast = TRUE)
   
   exp_names <- colnames(data)[(grepl(exposure, colnames(data)))]
   exposure_summary <- data[, exp_names]
