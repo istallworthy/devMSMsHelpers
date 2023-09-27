@@ -35,7 +35,7 @@ created/assessed that correspond to time points when exposure was measured}
 
 \item{ti_confounders}{list of time invariant confounders}
 
-\item{tv_confounders}{list of time-varying confounders with ".timepoint"
+\item{tv_confounders}{(optional) list of time-varying confounders with ".timepoint"
 suffix}
 
 \item{epochs}{(optional) data frame of exposure epoch labels and values}

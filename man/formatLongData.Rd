@@ -40,9 +40,6 @@ created/assessed that correspond to time points when exposure was measured}
 
 \item{save.out}{(optional) TRUE or FALSE indicator to save output and
 intermediary output locally (default is TRUE)}
-
-\item{tv_confounders}{list of time-varying confounders with ".timepoint"
-suffix}
 }
 \value{
 formatted long dataset

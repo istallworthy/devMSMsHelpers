@@ -1,5 +1,5 @@
 Package: devMSMsHelpers
-Title: What the Package Does (One Line, Title Case)
+Title: Helper functions to accompany the devMSMs package.
 Version: 0.0.0.9000
 Authors@R: 
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
@@ -12,15 +12,14 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports:
     doRNG,
-    dplyr,
     foreach,
     knitr, 
     mice, 
     missMethods,
     parallel,
     doParallel,
-    purrr,
     tibble,
-    tidyr,
     kableExtra,
     ggcorrplot
+Remotes: 
+    gitHub::istallworthy/devMSMs
