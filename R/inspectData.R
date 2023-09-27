@@ -201,7 +201,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
                                                        "[", 1)))[order(unique(c(time_invar_covars,
                                                                                 sapply(strsplit(all_potential_covariates,
                                                                                                 "\\."), "[", 1))))]
-  if(time_pts > 0){
+  if(length(time_pts) > 0){
     rownames(test) <- time_pts
     
     for (l in seq_len(nrow(test))) {
@@ -278,8 +278,8 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   if(save.out){
     ggcorrplot::ggcorrplot(corr_matrix,  type = "lower")+
-      ggplot2::theme(axis.text.x = element_text(size = 5, margin = ggplot2::margin(-2, 0, 0, 0)),  # Order: top, right, bottom, left
-                     axis.text.y = element_text(size = 5, margin = ggplot2::margin(0, -2, 0, 0))) +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5, margin = ggplot2::margin(-2, 0, 0, 0)),  # Order: top, right, bottom, left
+                     axis.text.y = ggplot2::element_text(size = 5, margin = ggplot2::margin(0, -2, 0, 0))) +
       ggplot2::geom_vline(xintercept = seq_len(ncol(mtcars)) - 0.5, colour="white", size = 2) +
       ggplot2::geom_hline(yintercept = seq_len(ncol(mtcars)) - 0.5, colour="white", size = 2)
     
