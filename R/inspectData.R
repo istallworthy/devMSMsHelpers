@@ -270,7 +270,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   variables_to_include <- unique(c(outcome, covariates_to_include, time_var_covars))
   # data2 <- data %>%
   #   select(all_of(variables_to_include))
-  data2 <- data[, variables_to_include]
+  data2 <- data[, c("ID", variables_to_include)]
   
   # Makes correlation table
   corr_matrix <- cor(as.data.frame(lapply(data2[, colnames(data2) != ID],
@@ -337,7 +337,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   # Outcome summary
   
-  out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(outcome_summary)))]
+  out_names <- colnames(data)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(data)))]
   outcome_summary <- data[, out_names]
   outcome_summary <- summary(outcome_summary)
   
