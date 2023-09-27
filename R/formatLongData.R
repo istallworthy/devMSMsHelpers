@@ -1,7 +1,7 @@
 
 #' Formats long data
 
-#' @param home_dir path to home directory
+#' @param home_dir path to home directory (required if save.out = TRUE)
 #' @param data dataframe in long format
 #' @param exposure name of exposure variable
 #' @param exposure_time_pts list of integers at which weights will be
@@ -66,14 +66,14 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   if (missing(exposure)){
     stop("Please supply a single exposure.", call. = FALSE)
   } 
-  else if(!is.character(exposure) | length(exposure) != 1){
+  else if(!is.character(exposure) || length(exposure) != 1){
     stop("Please supply a single exposure as a character.", call. = FALSE)
   }
   
   if (missing(outcome)){
     stop("Please supply a single outcome.", call. = FALSE)
   }
-  else if(!is.character(outcome) | length(outcome) != 1){
+  else if(!is.character(outcome) || length(outcome) != 1){
     stop("Please supply a single outcome as a character.", call. = FALSE)
   }
   
@@ -112,7 +112,7 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   }
   
   # Exposure summary
-  exposure_summary <- data[data$WAVE %in% exposure_time_pts, ]
+  exposure_summary <- data[data$WAVE %in% exposure_time_pts, , drop = FALSE]
   exp_names <- colnames(exposure_summary)[(grepl(exposure, colnames(exposure_summary)))]
   exp_names <- exp_names[!exp_names %in% "WAVE"]
   exposure_summary <- aggregate(as.formula(paste(exp_names, "WAVE", sep = " ~ ")), data = exposure_summary,
@@ -121,7 +121,7 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   colnames(exposure_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
   cat(knitr::kable(exposure_summary, 
-                   caption =sprintf("Summary of %s Exposure Information", 
+                   caption = sprintf("Summary of %s Exposure Information", 
                              exposure),
                    format = 'pipe'), sep = "\n")
   cat("\n")

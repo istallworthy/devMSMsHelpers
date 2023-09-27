@@ -93,21 +93,21 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     stop("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
          call. = FALSE)
   }
-  else if (!mice::is.mids(data) & !is.data.frame(data) & !inherits(data, "list")) {
+  else if (!mice::is.mids(data) && !is.data.frame(data) && !inherits(data, "list")) {
     stop("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", call. = FALSE)
   }
   
   if (missing(exposure)){
     stop("Please supply a single exposure.", call. = FALSE)
   }  
-  else if(!is.character(exposure) | length(exposure) != 1){
+  else if(!is.character(exposure) || length(exposure) != 1){
     stop("Please supply a single exposure as a character.", call. = FALSE)
   }
   
   if (missing(outcome)){
     stop("Please supply a single outcome.", call. = FALSE)
   }  
-  else if(!is.character(outcome) | length(outcome) != 1){
+  else if(!is.character(outcome) || length(outcome) != 1){
     stop("Please supply a single outcome as a character.", call. = FALSE)
   }
   
@@ -126,6 +126,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   if (missing(ti_confounders)){
     stop("Please supply a list of time invariant confounders.", call. = FALSE)
   }
+  
   if(!is.logical(verbose)){
     stop("Please set verbose to either TRUE or FALSE.", call. = FALSE)
   }
@@ -178,14 +179,11 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   
   if(!inherits(data, "data.frame")){
-    warning(
-      # paste0("Your data is a ", class(data), ". Convert to data frame before running devMSMs."),
-      sprintf("Your data is a %s. Convert to data frame before running devMSMs.",
-              class(data)),
-      call. = FALSE)
+    warning(sprintf("Your data is a %s. Convert to data frame before running devMSMs.",
+                    class(data)),
+            call. = FALSE)
     
   }
-  
   
   exposure_type <- if(inherits(data[, paste0(exposure, '.', exposure_time_pts[1])], 
                                "numeric")) "continuous" else "binary"
@@ -257,7 +255,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
       if(verbose){
         print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.", "\n")
         cat("\n")
-        }
+      }
     }
   }
   
@@ -363,7 +361,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
                        format = 'pipe'), sep = "\n")
       # cat(paste0(exposure, " exposure descriptive statistics have now been saved in the home directory"), "\n")
       cat("\n")
-
+      
       cat(sprintf("%s exposure descriptive statistics have now been saved in the home directory. \n",
                   exposure))
       cat("\n")
@@ -373,7 +371,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   # devtools::install_github("istallworthy/devMSMs") #temporary
   
   devMSMs::eval_hist(data = data2, exposure, epochs,
-            exposure_time_pts, hi_lo_cut, ref = reference, comps = comparison, verbose)
+                     exposure_time_pts, hi_lo_cut, ref = reference, comps = comparison, verbose)
   
   # Exposure history summary
   if( is.null(epochs)){ #making epochs time pts if not specified by user
@@ -381,7 +379,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
                          values = time_pts)
   }
   else{
-    if( !is.data.frame(epochs) | ncol(epochs) != 2 | sum(colnames(epochs) == c("epochs", "values")) != ncol(epochs)){
+    if( !is.data.frame(epochs) || ncol(epochs) != 2 || sum(colnames(epochs) == c("epochs", "values")) != ncol(epochs)){
       stop("If you supply epochs, please provide a dataframe with two columns of epochs and values.",
            call. = FALSE)
     }
@@ -391,19 +389,21 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   }
   
   # Outcome summary
-  
   out_names <- colnames(data)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(data)))]
   outcome_summary <- data[, out_names]
   outcome_summary <- summary(outcome_summary)
   
   if(save.out){
-    k <-  knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ",
-                                                         sapply(strsplit(outcome, "\\."), "[", 1), " Information"), format = 'html') 
-    kableExtra::save_kable(k, file = file.path(home_dir, paste0("/", sapply(strsplit(outcome, "\\."), "[", 1), "_outcome_info.html")))
+    k <-  knitr::kable(outcome_summary, 
+                       caption = paste0("Summary of Outcome ",
+                                        sapply(strsplit(outcome, "\\."), "[", 1), " Information"), format = 'html') 
+    kableExtra::save_kable(k, 
+                           file = file.path(home_dir, paste0("/", sapply(strsplit(outcome, "\\."), "[", 1), "_outcome_info.html")))
     
     if (verbose){
-      cat(knitr::kable(outcome_summary, caption = paste0("Summary of Outcome ",
-                                                         sapply(strsplit(outcome, "\\."), "[", 1), " Information"),
+      cat(knitr::kable(outcome_summary, 
+                       caption = paste0("Summary of Outcome ",
+                                        sapply(strsplit(outcome, "\\."), "[", 1), " Information"),
                        format = 'pipe'), sep = "\n")
       
       # cat(paste0(sapply(strsplit(outcome, "\\."), "[", 1), " outcome descriptive statistics have now been saved in the home directory"), "\n")

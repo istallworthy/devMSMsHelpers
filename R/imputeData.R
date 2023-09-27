@@ -71,21 +71,21 @@ imputeData <- function(data, m = 5, method = "rf", home_dir = NA, exposure, outc
   if (missing(exposure)){
     stop("Please supply a single exposure.", call. = FALSE)
   }
-  else if(!is.character(exposure) | length(exposure) != 1){
+  else if(!is.character(exposure) || length(exposure) != 1){
     stop("Please supply a single exposure as a character.", call. = FALSE)
   }
   
   if (missing(outcome)){
     stop("Please supply a single outcome.", call. = FALSE)
   }
-  else if(!is.character(outcome) | length(outcome) != 1){
+  else if(!is.character(outcome) || length(outcome) != 1){
     stop("Please supply a single outcome as a character.", call. = FALSE)
   }
   
-  if(!is.character(method) | length(method) != 1){
+  if(!is.character(method) || length(method) != 1){
     stop("Please provide as a character a valid imputation method abbreviation.", call. = FALSE)
   }
-  if(!is.numeric(m) | length(m) != 1){
+  if(!is.numeric(m) || length(m) != 1){
     stop("Please provide an integer value number of imputations.", call. = FALSE)
   }
   
@@ -115,7 +115,7 @@ imputeData <- function(data, m = 5, method = "rf", home_dir = NA, exposure, outc
            Please set 'read_imps_from_file' == 'no' and re-run.", call. = FALSE)
     }
     
-    imp <- readRDS( sprintf("%s/imputations/%s-%s_all_imp.rds",
+    imp <- readRDS(sprintf("%s/imputations/%s-%s_all_imp.rds",
               home_dir, exposure, outcome))
     imputed_datasets <- imp
     
