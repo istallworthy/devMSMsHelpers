@@ -172,7 +172,7 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
            call. = FALSE)
     }
     # Formatting factor covariates
-    data[, factor_confounders] <- sapply(data[, factor_confounders], as.factor)
+    data[, factor_confounders] <- as.data.frame(lapply(data[, factor_confounders], as.factor))
     # Formatting numeric covariates
     numeric_vars <- colnames(data)[!colnames(data) %in% c(factor_confounders)]
     data[, numeric_vars] <- lapply(data[, numeric_vars], as.numeric)
