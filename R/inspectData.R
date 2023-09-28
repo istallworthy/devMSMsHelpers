@@ -253,23 +253,23 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
                         home_dir, exposure, outcome),
                 row.names = TRUE)
       if(verbose){
-        print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.", "\n")
+        cat("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.")
         cat("\n")
+        cat("\n")
+        
       }
     }
   }
   
   if(verbose){
-    print(sprintf("USER ALERT: Below are the %s variables spanning %s unique domains that will be treated as confounding 
-                  variables for the relation between %s and %s. \n",
+    message(sprintf("USER ALERT: Below are the %s variables spanning %s unique domains that will be treated as confounding variables for the relation between %s and %s. \n",
                   as.character(length(all_potential_covariates)),
                   unique_vars,
                   exposure,
-                  outcome,
-                  as.character(length(all_potential_covariates))))
+                  outcome))
+                  # as.character(length(all_potential_covariates))))
     
-    print("Please inspect this list carefully. 
-          It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point." 
+    message("Please inspect this list carefully. It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point." 
     )
     print(all_potential_covariates[!(all_potential_covariates %in% c(ID))])
   }
@@ -298,6 +298,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     if(sum(sapply(data, is.character)) > 0){
       warning(paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", collapse = ", "),
                      " are of class character.", " The package cannot accept character variables."), call. = FALSE)
+      cat("\n")
     }
   }
   #covariate correlations
