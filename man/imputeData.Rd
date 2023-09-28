@@ -12,6 +12,7 @@ imputeData(
   home_dir = NA,
   exposure,
   outcome,
+  maxit = 5,
   para_proc = TRUE,
   read_imps_from_file = "no",
   save.out = TRUE

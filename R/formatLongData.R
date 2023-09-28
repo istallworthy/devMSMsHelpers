@@ -91,7 +91,7 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   }
   
   options(readr.num_columns = 0)
-
+  
   
   # Reading and formatting LONG dataset
   if (!is.na(time_var)){
@@ -115,14 +115,15 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   exposure_summary <- data[data$WAVE %in% exposure_time_pts, , drop = FALSE]
   exp_names <- colnames(exposure_summary)[(grepl(exposure, colnames(exposure_summary)))]
   exp_names <- exp_names[!exp_names %in% "WAVE"]
-  exposure_summary <- aggregate(as.formula(paste(exp_names, "WAVE", sep = " ~ ")), data = exposure_summary,
+  exposure_summary <- aggregate(as.formula(paste(exp_names, "WAVE", sep = " ~ ")), 
+                                data = exposure_summary,
                                 FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
   exposure_summary <- do.call(data.frame, exposure_summary)
   colnames(exposure_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
   cat(knitr::kable(exposure_summary, 
                    caption = sprintf("Summary of %s Exposure Information", 
-                             exposure),
+                                     exposure),
                    format = 'pipe'), sep = "\n")
   cat("\n")
   
@@ -143,9 +144,10 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   outcome_summary <- data[, !colnames(data) %in% "ID"]
   out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(outcome_summary)))]
   out_names <- out_names[!out_names %in% "WAVE"]
-
-  outcome_summary <- aggregate(as.formula(paste(out_names, "WAVE", sep = " ~ ")), data = outcome_summary,
-                                FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
+  
+  outcome_summary <- aggregate(as.formula(paste(out_names, "WAVE", sep = " ~ ")), 
+                               data = outcome_summary,
+                               FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
   outcome_summary <- do.call(data.frame, outcome_summary)
   colnames(outcome_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
@@ -156,7 +158,8 @@ formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome,
   
   if(save.out){
     k <-  knitr::kable(outcome_summary, 
-                       caption = paste0("Summary of Outcome ", outcome, " Information"), format = 'html') 
+                       caption = paste0("Summary of Outcome ", outcome, " Information"), 
+                       format = 'html') 
     kableExtra::save_kable(k, 
                            file = file.path(home_dir, paste0(outcome, "_outcome_info.html")))
     
