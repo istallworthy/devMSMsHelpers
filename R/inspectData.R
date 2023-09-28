@@ -80,13 +80,16 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   if (save.out) {
     if (missing(home_dir)) {
-      stop("Please supply a home directory.", call. = FALSE)
+      stop("Please supply a home directory.", 
+           call. = FALSE)
     }
     else if(!is.character(home_dir)){
-      stop("Please provide a valid home directory path as a string if you wish to save output locally.", call. = FALSE)
+      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
+           call. = FALSE)
     }
     else if(!dir.exists(home_dir)) {
-      stop("Please provide a valid home directory path if you wish to save output locally.", call. = FALSE)
+      stop("Please provide a valid home directory path if you wish to save output locally.", 
+           call. = FALSE)
     }
   }
   if (missing(data)){
@@ -94,28 +97,35 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
          call. = FALSE)
   }
   else if (!mice::is.mids(data) && !is.data.frame(data) && !inherits(data, "list")) {
-    stop("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", call. = FALSE)
+    stop("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", 
+         call. = FALSE)
   }
   
   if (missing(exposure)){
-    stop("Please supply a single exposure.", call. = FALSE)
+    stop("Please supply a single exposure.", 
+         call. = FALSE)
   }  
   else if(!is.character(exposure) || length(exposure) != 1){
-    stop("Please supply a single exposure as a character.", call. = FALSE)
+    stop("Please supply a single exposure as a character.",
+         call. = FALSE)
   }
   
   if (missing(outcome)){
-    stop("Please supply a single outcome.", call. = FALSE)
+    stop("Please supply a single outcome.", 
+         call. = FALSE)
   }  
   else if(!is.character(outcome) || length(outcome) != 1){
-    stop("Please supply a single outcome as a character.", call. = FALSE)
+    stop("Please supply a single outcome as a character.", 
+         call. = FALSE)
   }
   
   if (missing(exposure_time_pts)){
-    stop("Please supply the exposure time points at which you wish to create weights.", call. = FALSE)
+    stop("Please supply the exposure time points at which you wish to create weights.", 
+         call. = FALSE)
   }  
   else if(!is.numeric(exposure_time_pts)){
-    stop("Please supply a list of exposure time points as integers.", call. = FALSE)
+    stop("Please supply a list of exposure time points as integers.", 
+         call. = FALSE)
   }
   
   if (missing(tv_confounders)){
@@ -124,21 +134,26 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     tv_confounders <- NULL
   }
   if (missing(ti_confounders)){
-    stop("Please supply a list of time invariant confounders.", call. = FALSE)
+    stop("Please supply a list of time invariant confounders.", 
+         call. = FALSE)
   }
   
   if(!is.logical(verbose)){
-    stop("Please set verbose to either TRUE or FALSE.", call. = FALSE)
+    stop("Please set verbose to either TRUE or FALSE.", 
+         call. = FALSE)
   }
   else if(length(verbose) != 1){
-    stop("Please provide a single TRUE or FALSE value to verbose.", call. = FALSE)
+    stop("Please provide a single TRUE or FALSE value to verbose.", 
+         call. = FALSE)
   }
   
   if(!is.logical(save.out)){
-    stop("Please set save.out to either TRUE or FALSE.", call. = FALSE)
+    stop("Please set save.out to either TRUE or FALSE.", 
+         call. = FALSE)
   }
   else if(length(save.out) != 1){
-    stop("Please provide a single TRUE or FALSE value to save.out.", call. = FALSE)
+    stop("Please provide a single TRUE or FALSE value to save.out.", 
+         call. = FALSE)
   }
   
   ID <- "ID"
@@ -255,18 +270,18 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
       if(verbose){
         print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome. \n")
         cat("\n")
-
+        
       }
     }
   }
   
   if(verbose){
     message(sprintf("USER ALERT: Below are the %s variables spanning %s unique domains that will be treated as confounding variables for the relation between %s and %s. \n",
-                  as.character(length(all_potential_covariates)),
-                  unique_vars,
-                  exposure,
-                  outcome))
-                  # as.character(length(all_potential_covariates))))
+                    as.character(length(all_potential_covariates)),
+                    unique_vars,
+                    exposure,
+                    outcome))
+    # as.character(length(all_potential_covariates))))
     
     message("Please inspect this list carefully. It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point." 
     )
@@ -296,7 +311,8 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     
     if(sum(sapply(data, is.character)) > 0){
       warning(paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", collapse = ", "),
-                     " are of class character.", " The package cannot accept character variables."), call. = FALSE)
+                     " are of class character.", " The package cannot accept character variables."), 
+              call. = FALSE)
       cat("\n")
     }
   }
@@ -320,10 +336,8 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
       ggplot2::geom_hline(yintercept = seq_len(ncol(mtcars)) - 0.5, colour="white", size = 2)
     
     # Save correlation plot
-    pdf(file = 
-          # paste0(home_dir, "/", exposure, "-", outcome, "_all_vars_corr_plot.pdf"))
-          sprintf("%s/%s-%s_all_vars_corr_plot.pdf",
-                  home_dir, exposure, outcome))
+    pdf(file = sprintf("%s/%s-%s_all_vars_corr_plot.pdf",
+                       home_dir, exposure, outcome))
     print(ggplot2::last_plot())
     dev.off()
     
@@ -371,7 +385,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   # devtools::install_github("istallworthy/devMSMs") #temporary
   
   eval_hist(data = data2, exposure, epochs,
-                     exposure_time_pts, hi_lo_cut, ref = reference, comps = comparison, verbose)
+            exposure_time_pts, hi_lo_cut, ref = reference, comps = comparison, verbose)
   
   # Exposure history summary
   if( is.null(epochs)){ #making epochs time pts if not specified by user
