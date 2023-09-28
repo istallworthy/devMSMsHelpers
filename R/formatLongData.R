@@ -45,49 +45,75 @@
 #'                                    save.out = FALSE)
 
 
-formatLongData <- function(home_dir, data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA,
+formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA,
                            factor_confounders = NULL, save.out = TRUE){
   
   if(save.out){
     if (missing(home_dir)){
-      stop("Please supply a home directory.", call. = FALSE)
+      stop("Please supply a home directory.", 
+           call. = FALSE)
     }
     else if(!is.character(home_dir)){
-      stop("Please provide a valid home directory path as a string if you wish to save output locally.", call. = FALSE)
+      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
+           call. = FALSE)
     }
     else if (!dir.exists(home_dir)) {
-      stop('Please provide a valid home directory.', call. = FALSE)
+      stop('Please provide a valid home directory.', 
+           call. = FALSE)
     }
   }
+  
   if (missing(data)){
     stop("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
          call. = FALSE)
   }
+  else if (!is.data.frame(data)){
+    stop("Please provide a long dataset as a data frame.",
+         call. = FALSE)
+  }
+  else if(is.na(time_var) && !colnames(data) %in% "WAVE"){
+    stop("Please provide a long dataset with a time variable WAVE or specify the time-variable input.",
+         call. = FALSE)
+  }
+  else if(!is.na(time_var) && !colnames(data) %in% time_var){
+    stop("Please provide a long dataset with a time variable WAVE or specify the time-variable input.",
+         call. = FALSE)
+  }  
+  
   if (missing(exposure)){
-    stop("Please supply a single exposure.", call. = FALSE)
+    stop("Please supply a single exposure.", 
+         call. = FALSE)
   } 
   else if(!is.character(exposure) || length(exposure) != 1){
-    stop("Please supply a single exposure as a character.", call. = FALSE)
+    stop("Please supply a single exposure as a character.", 
+         call. = FALSE)
   }
   
   if (missing(outcome)){
-    stop("Please supply a single outcome.", call. = FALSE)
+    stop("Please supply a single outcome.", 
+         call. = FALSE)
   }
   else if(!is.character(outcome) || length(outcome) != 1){
-    stop("Please supply a single outcome as a character.", call. = FALSE)
+    stop("Please supply a single outcome as a character.", 
+         call. = FALSE)
   }
   
   if (missing(exposure_time_pts)){
-    stop("Please supply the exposure time points at which you wish to create weights.", call. = FALSE)
+    stop("Please supply the exposure time points at which you wish to create weights.", 
+         call. = FALSE)
   }
   else if(!is.numeric(exposure_time_pts)){
-    stop("Please supply a list of exposure time points as integers.", call. = FALSE)
+    stop("Please supply a list of exposure time points as integers.", 
+         call. = FALSE)
   }
+  
   if(!is.logical(save.out)){
-    stop("Please set save.out to either TRUE or FALSE.", call. = FALSE)
+    stop("Please set save.out to either TRUE or FALSE.", 
+         call. = FALSE)
   }
   else if(length(save.out) != 1){
-    stop("Please provide a single TRUE or FALSE value to save.out.", call. = FALSE)
+    stop("Please provide a single TRUE or FALSE value to save.out.", 
+         call. = FALSE)
   }
   
   options(readr.num_columns = 0)
