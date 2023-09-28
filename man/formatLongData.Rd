@@ -18,7 +18,7 @@ formatLongData(
 )
 }
 \arguments{
-\item{home_dir}{path to home directory}
+\item{home_dir}{path to home directory (required if save.out = TRUE)}
 
 \item{data}{dataframe in long format}
 
