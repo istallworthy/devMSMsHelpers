@@ -253,10 +253,9 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
                         home_dir, exposure, outcome),
                 row.names = TRUE)
       if(verbose){
-        cat("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.")
+        cat("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome. \n")
         cat("\n")
-        cat("\n")
-        
+
       }
     }
   }
