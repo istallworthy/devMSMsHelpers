@@ -370,7 +370,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   # devtools::install_github("istallworthy/devMSMs") #temporary
   
-  devMSMs::eval_hist(data = data2, exposure, epochs,
+  eval_hist(data = data2, exposure, epochs,
                      exposure_time_pts, hi_lo_cut, ref = reference, comps = comparison, verbose)
   
   # Exposure history summary
