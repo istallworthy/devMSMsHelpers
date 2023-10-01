@@ -80,101 +80,97 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   if (save.out) {
     if (missing(home_dir)) {
-      stop("Please supply a home directory.", 
+      stop ("Please supply a home directory.", 
            call. = FALSE)
     }
-    else if(!is.character(home_dir)){
-      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
+    else if (!is.character(home_dir)) {
+      stop ("Please provide a valid home directory path as a string if you wish to save output locally.", 
            call. = FALSE)
     }
-    else if(!dir.exists(home_dir)) {
-      stop("Please provide a valid home directory path if you wish to save output locally.", 
+    else if (!dir.exists(home_dir)) {
+      stop ("Please provide a valid home directory path if you wish to save output locally.", 
            call. = FALSE)
     }
   }
   
-  if (missing(data)){
-    stop("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
+  if (missing(data)) {
+    stop ("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
          call. = FALSE)
   }
   else if (!mice::is.mids(data) && !is.data.frame(data) && !inherits(data, "list")) {
-    stop("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", 
+    stop ("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", 
          call. = FALSE)
   }
-  else if(is.list(data) && !is.data.frame(data)){
-    if (sum(sapply(data, is.data.frame)) != length(data)){
-      stop("Please supply a list of data frames that have been imputed.", 
+  else if (is.list(data) && !is.data.frame(data)) {
+    if (sum(sapply(data, is.data.frame)) != length(data)) {
+      stop ("Please supply a list of data frames that have been imputed.", 
            call. = FALSE)
     }
   }
   
-  if (missing(exposure)){
-    stop("Please supply a single exposure.", 
+  if (missing(exposure)) {
+    stop ("Please supply a single exposure.", 
          call. = FALSE)
   }  
-  else if(!is.character(exposure) || length(exposure) != 1){
-    stop("Please supply a single exposure as a character.",
+  else if (!is.character(exposure) || length(exposure) != 1) {
+    stop ("Please supply a single exposure as a character.",
          call. = FALSE)
   }
   
-  if (missing(outcome)){
-    stop("Please supply a single outcome.", 
+  if (missing(outcome)) {
+    stop ("Please supply a single outcome.", 
          call. = FALSE)
   }  
-  else if(!is.character(outcome) || length(outcome) != 1){
-    stop("Please supply a single outcome as a character.", 
+  else if (!is.character(outcome) || length(outcome) != 1) { 
+    stop ("Please supply a single outcome as a character.", 
          call. = FALSE)
   }
   
-  if (missing(exposure_time_pts)){
-    stop("Please supply the exposure time points at which you wish to create weights.", 
+  if (missing(exposure_time_pts)) {
+    stop ("Please supply the exposure time points at which you wish to create weights.", 
          call. = FALSE)
   }  
-  else if(!is.numeric(exposure_time_pts)){
-    stop("Please supply a list of exposure time points as integers.", 
+  else if (!is.numeric(exposure_time_pts)) {
+    stop ("Please supply a list of exposure time points as integers.", 
          call. = FALSE)
   }
   
-  if (missing(tv_confounders)){
-    warning("You have not supplied any time-varying confounders. Any time-varying exposure variables should be listed in tv_confounders.", 
+  if (missing(tv_confounders)) {
+    warning ("You have not supplied any time-varying confounders. Any time-varying exposure variables should be listed in tv_confounders.", 
             call. = FALSE)
     tv_confounders <- NULL
   }
-  if (missing(ti_confounders)){
-    stop("Please supply a list of time invariant confounders.", 
+  if (missing(ti_confounders)) {
+    stop ("Please supply a list of time invariant confounders.", 
          call. = FALSE)
   }
   
-  if(!is.logical(verbose)){
+  if (!is.logical(verbose)) {
     stop("Please set verbose to either TRUE or FALSE.", 
          call. = FALSE)
   }
-  else if(length(verbose) != 1){
-    stop("Please provide a single TRUE or FALSE value to verbose.", 
+  else if (length(verbose) != 1) {
+    stop ("Please provide a single TRUE or FALSE value to verbose.", 
          call. = FALSE)
   }
   
-  if(!is.logical(save.out)){
-    stop("Please set save.out to either TRUE or FALSE.", 
+  if (!is.logical(save.out)) {
+    stop ("Please set save.out to either TRUE or FALSE.", 
          call. = FALSE)
   }
-  else if(length(save.out) != 1){
-    stop("Please provide a single TRUE or FALSE value to save.out.", 
+  else if(length(save.out) != 1) {
+    stop ("Please provide a single TRUE or FALSE value to save.out.", 
          call. = FALSE)
   }
   
-  # ID <- "ID"
-  # time_invar_covars <- ti_confounders
-  # time_var_covars <- tv_confounders
-  
-  if(!is.null(tv_confounders)){
+  if (!is.null(tv_confounders)) {
     time_pts <- as.numeric(sapply(strsplit(tv_confounders[grepl(exposure, tv_confounders)], "\\."), "[", 2))
   }
-  else{
+  else {
     time_pts <- 0
   }
   
-  if (mice::is.mids(data)){
+  if (mice::is.mids(data)) {
     data <- as.data.frame(mice::complete(data, 1))
   }
   
@@ -184,7 +180,8 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   }
   
   # long format to wide
-  if("WAVE" %in% colnames(data)){
+  
+  if ("WAVE" %in% colnames(data)) {
     
     v <- sapply(strsplit(tv_confounders, "\\."), "[", 1)
     v <- v[!duplicated(v)]
@@ -200,43 +197,47 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   }
   
   
-  if(!inherits(data, "data.frame")){
-    warning(sprintf("Your data is a %s. Convert to data frame before running devMSMs.",
+  if (!inherits(data, "data.frame")) {
+    warning (sprintf("Your data is a %s. Convert to data frame before running devMSMs.",
                     class(data)),
             call. = FALSE)
     
   }
   
-  exposure_type <- if(inherits(data[, paste0(exposure, '.', exposure_time_pts[1])], 
+  exposure_type <- if (inherits(data[, paste0(exposure, '.', exposure_time_pts[1])], 
                                "numeric")) "continuous" else "binary"
   
   # Confounder summary
+  
   potential_covariates <- colnames(data)[!(colnames(data) %in% c("ID"))]
   
-  if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)){
-    stop(paste(tv_confounders[!tv_confounders %in% potential_covariates]),
-         " time-varying confounders are not present in the dataset.", call. = FALSE)
+  if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)) {
+    stop (paste(tv_confounders[!tv_confounders %in% potential_covariates]),
+         " time-varying confounders are not present in the dataset.", 
+         call. = FALSE)
   }
   
-  if (sum(ti_confounders %in% potential_covariates) != length(ti_confounders)){
-    stop(paste(ti_confounders[!ti_confounders %in% potential_covariates]),
-         " time invariant confounders are not present in the dataset.", call. = FALSE)
+  if (sum(ti_confounders %in% potential_covariates) != length(ti_confounders)) {
+    stop (paste(ti_confounders[!ti_confounders %in% potential_covariates]),
+         " time invariant confounders are not present in the dataset.", 
+         call. = FALSE)
   }
   
   all_potential_covariates <- c(ti_confounders, tv_confounders)
   all_potential_covariates <- all_potential_covariates[order(all_potential_covariates)]
   
   # Format for table output to visualize available covariates by time point
+  
   covar_table <- data.frame(variable = sapply(strsplit(all_potential_covariates, "\\."), "[", 1),
                             time_pt = sapply(strsplit(all_potential_covariates, "\\."), "[", 2))
   covar_table <- covar_table[order(covar_table$time_pt, covar_table$variable), ]
   
-  if(sum(is.na(covar_table$time_pt)) > nrow(covar_table)){
+  if (sum(is.na(covar_table$time_pt)) > nrow(covar_table)) {
     covar_table <- aggregate(variable ~ time_pt, data = covar_table,
                              FUN = function(x) variable = toString(x))
   }
   
-  if(save.out){
+  if (save.out) {
     write.csv(covar_table, 
               sprintf("%s/%s-%s_covariates_considered_by_time_pt.csv",
                       home_dir, exposure, outcome),
@@ -252,7 +253,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
                                     "[", 1)))[order(unique(c(ti_confounders,
                                                              sapply(strsplit(all_potential_covariates,
                                                                              "\\."), "[", 1))))]
-  if(length(time_pts) > 0){
+  if (length(time_pts) > 0) {
     rownames(test) <- time_pts
     
     for (l in seq_len(nrow(test))) {
@@ -268,12 +269,12 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     NumVars <- data.frame(NumVars = rowSums(test, na.rm = TRUE))
     test[seq_len(nrow(test)), ncol(test) + 1] <- NumVars
     
-    if(save.out){
+    if (save.out) {
       write.csv(test, 
                 sprintf("%s/%s-%s_matrix_of_covariates_considered_by_time_pt.csv",
                         home_dir, exposure, outcome),
                 row.names = TRUE)
-      if(verbose){
+      if (verbose) {
         print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome. \n")
         cat("\n")
         
@@ -281,7 +282,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     }
   }
   
-  if(verbose){
+  if (verbose) {
     message(sprintf("USER ALERT: Below are the %s variables spanning %s unique domains that will be treated as confounding variables for the relation between %s and %s. \n",
                     as.character(length(all_potential_covariates)),
                     unique_vars,
@@ -296,7 +297,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   
   # Data type
-  if(verbose){
+  if (verbose) {
     cat("\n")
     cat("The following variables are designated as numeric:", "\n")
     print(paste(colnames(data)[sapply(data, class) == "numeric"], sep = ",", collapse = ", "))
@@ -309,7 +310,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     oth <- data.frame(variable = names(sapply(data, class)) [!sapply(data, class) %in% c("numeric", "factor")],
                       type = sapply(data, class) [!sapply(data, class) %in% c("numeric", "factor")])
     
-    if(nrow(oth) > 0 ){
+    if (nrow(oth) > 0 ) {
       cat(knitr::kable(oth, 
                        caption = "Other variable types",
                        format = 'pipe'), 
@@ -317,17 +318,20 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
       cat("\n")
     }
     
-    if(sum(sapply(data, is.character)) > 0){
-      warning(paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", collapse = ", "),
+    if (sum(sapply(data, is.character)) > 0) {
+      warning (paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", collapse = ", "),
                      " are of class character.", " The package cannot accept character variables."), 
               call. = FALSE)
       cat("\n")
     }
   }
+  
   #covariate correlations
+  
   covariates_to_include <- all_potential_covariates
   
   # Creates final dataset with only relevant variables
+  
   covariates_to_include <- covariates_to_include[order(covariates_to_include)]
   variables_to_include <- unique(c(outcome, covariates_to_include, tv_confounders))
   data2 <- data[, c("ID", variables_to_include)]
@@ -336,7 +340,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   corr_matrix <- cor(as.data.frame(lapply(data2[, colnames(data2) != "ID"],
                                           as.numeric)), use = "pairwise.complete.obs")
   
-  if(save.out){
+  if (save.out) {
     ggcorrplot::ggcorrplot(corr_matrix,  type = "lower")+
       ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5, margin = ggplot2::margin(-2, 0, 0, 0)),  # Order: top, right, bottom, left
                      axis.text.y = ggplot2::element_text(size = 5, margin = ggplot2::margin(0, -2, 0, 0))) +
@@ -349,7 +353,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     print(ggplot2::last_plot())
     dev.off()
     
-    if(verbose){
+    if (verbose) {
       cat("\n")
       cat("A correlation plot of all variables in the dataset has been saved in the home directory", "\n")
       cat("\n")
@@ -358,12 +362,13 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   
   
   # Exposure summary
+  
   exp_names <- colnames(data)[(grepl(exposure, colnames(data)))]
   exposure_summary <- data[, exp_names]
   exposure_summary <- summary(exposure_summary)
   
   
-  if (save.out){
+  if (save.out) {
     k <- knitr::kable(exposure_summary, 
                       caption = sprintf("Summary of %s Exposure Information",
                                         exposure),
@@ -372,7 +377,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
                            file = file.path(home_dir, 
                                             sprintf("/%s_exposure_info.html",
                                                     exposure)))
-    if(verbose){
+    if (verbose) {
       cat(knitr::kable(exposure_summary, 
                        caption = paste0("Summary of ", exposure, " Exposure Information"),
                        format = 'pipe'), sep = "\n")
@@ -384,19 +389,20 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     }
   }
   
-  # devtools::install_github("istallworthy/devMSMs") #temporary
+  devtools::install_github("istallworthy/devMSMs") #temporary
   
-  eval_hist(data = data2, exposure, epochs,
+  devMSMs::eval_hist(data = data2, exposure, epochs,
             exposure_time_pts, hi_lo_cut, ref = reference, comps = comparison, verbose)
   
   # Exposure history summary
-  if( is.null(epochs)){ #making epochs time pts if not specified by user
+  
+  if ( is.null(epochs)) { #making epochs time pts if not specified by user
     epochs <- data.frame(epochs = as.character(time_pts),
                          values = time_pts)
   }
-  else{
-    if( !is.data.frame(epochs) || ncol(epochs) != 2 || sum(colnames(epochs) == c("epochs", "values")) != ncol(epochs)){
-      stop("If you supply epochs, please provide a dataframe with two columns of epochs and values.",
+  else {
+    if ( !is.data.frame(epochs) || ncol(epochs) != 2 || sum(colnames(epochs) == c("epochs", "values")) != ncol(epochs)) {
+      stop ("If you supply epochs, please provide a dataframe with two columns of epochs and values.",
            call. = FALSE)
     }
     if(sum(is.na(epochs$values)) > 0){
@@ -405,11 +411,12 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
   }
   
   # Outcome summary
+  
   out_names <- colnames(data)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(data)))]
   outcome_summary <- data[, out_names]
   outcome_summary <- summary(outcome_summary)
   
-  if(save.out){
+  if (save.out) {
     k <-  knitr::kable(outcome_summary, 
                        caption = paste0("Summary of Outcome ",
                                         sapply(strsplit(outcome, "\\."), "[", 1), " Information"), 
@@ -417,14 +424,13 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     kableExtra::save_kable(k, 
                            file = file.path(home_dir, paste0("/", sapply(strsplit(outcome, "\\."), "[", 1), "_outcome_info.html")))
     
-    if (verbose){
+    if (verbose) {
       cat(knitr::kable(outcome_summary, 
                        caption = paste0("Summary of Outcome ",
                                         sapply(strsplit(outcome, "\\."), "[", 1), " Information"),
                        format = 'pipe'), 
           sep = "\n")
       
-      # cat(paste0(sapply(strsplit(outcome, "\\."), "[", 1), " outcome descriptive statistics have now been saved in the home directory"), "\n")
       cat(sprintf("%s outcome descriptive statistics have now been saved in the home directory. \n",
                   sapply(strsplit(outcome, "\\."), "[", 1)))
     }

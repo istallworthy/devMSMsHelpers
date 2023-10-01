@@ -3,4 +3,5 @@
 export(formatLongData)
 export(imputeData)
 export(inspectData)
+import(ranger)
 importFrom(doRNG,"%dorng%")
