@@ -32,6 +32,8 @@ imputeData(
 
 \item{outcome}{name of outcome variable with ".timepoint" suffix}
 
+\item{maxit}{(optional) maximum number of iterations in mice (default is 5)}
+
 \item{para_proc}{(optional) TRUE/FALSE whether to do parallel processing
 using multiple cores to speed up process (default = TRUE)}
 

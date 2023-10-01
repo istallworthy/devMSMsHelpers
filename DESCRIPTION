@@ -20,6 +20,8 @@ Imports:
     doParallel,
     tibble,
     kableExtra,
-    ggcorrplot
+    ggplot2,
+    ggcorrplot,
+    ranger
 Remotes: 
     gitHub::istallworthy/devMSMs

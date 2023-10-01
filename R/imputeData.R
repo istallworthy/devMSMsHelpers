@@ -3,6 +3,7 @@
 #'
 #' @export
 #' @importFrom doRNG %dorng%
+#' @import ranger
 #' @seealso {[mice::mice()],
 #'   <https://cran.r-project.org/web/packages/mice/index.html>}
 #' @param data data in wide format

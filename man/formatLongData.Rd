@@ -5,7 +5,7 @@
 \title{Formats long data}
 \usage{
 formatLongData(
-  home_dir,
+  home_dir = NA,
   data,
   exposure,
   exposure_time_pts,
