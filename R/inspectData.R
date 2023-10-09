@@ -101,7 +101,7 @@ inspectData <- function(data, home_dir, exposure, exposure_time_pts, outcome, ti
     stop ("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", 
          call. = FALSE)
   }
-  else if (is.list(data) && !is.data.frame(data)) {
+  else if (is.list(data) && !is.data.frame(data)  && !mice::is.mids(data)) {
     if (sum(sapply(data, is.data.frame)) != length(data)) {
       stop ("Please supply a list of data frames that have been imputed.", 
            call. = FALSE)
