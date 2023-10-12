@@ -7,15 +7,16 @@ processing to speed up}
 \usage{
 imputeData(
   data,
-  m = 5,
-  method = "rf",
+  m = NA,
+  method = NA,
   home_dir = NA,
   exposure,
   outcome,
-  maxit = 5,
+  maxit = NA,
   para_proc = TRUE,
   read_imps_from_file = "no",
-  save.out = TRUE
+  save.out = TRUE,
+  ...
 )
 }
 \arguments{
@@ -42,6 +43,8 @@ that have been previously run and saved locally (default is "no")}
 
 \item{save.out}{(optional) TRUE or FALSE indicator to save output and
 intermediary output locally (default is TRUE)}
+
+\item{...}{any argument used by mice::mice()}
 }
 \value{
 mice object of m imputed datasets
