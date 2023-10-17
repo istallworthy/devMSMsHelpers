@@ -15,10 +15,10 @@
 #' @param hi_lo_cut (optional) list of two numbers indicating quantile values
 #'   that reflect high and low values, respectively, for continuous exposure
 #'   (default is median split)
-#' @param reference (optional)string of "-"-separated "l" and "h" values
+#' @param reference (optional) list of one or more strings of "-"-separated "l" and "h" values
 #'   indicative of a reference exposure history to which to compare comparison,
 #'   required if comparison is specified
-#' @param comparison (optional)list of one or more strings of "-"-separated "l"
+#' @param comparison (optional) list of one or more strings of "-"-separated "l"
 #'   and "h" values indicative of comparison history/histories to compare to
 #'   reference, required if reference is specified
 #' @param verbose (optional) TRUE or FALSE indicator for user output (default is
@@ -76,7 +76,7 @@
 
 
 inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, ti_confounders, tv_confounders = NULL, epochs = NULL,
-                         hi_lo_cut = NULL, reference = NA, comparison = NULL, verbose = TRUE, save.out = TRUE) {
+                         hi_lo_cut = NULL, reference = NULL, comparison = NULL, verbose = TRUE, save.out = TRUE) {
   
   if (save.out) {
     if (missing(home_dir)) {
@@ -202,7 +202,7 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
     lapply(1:length(data), function(x){
       
       data2 <- data[[x]]
-
+      
       if (verbose) {
         message(sprintf("Imputation %s", x))
       }
@@ -252,15 +252,29 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   
   potential_covariates <- colnames(data)[!(colnames(data) %in% c("ID"))]
   
-  if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)) {
-    stop (paste(tv_confounders[!tv_confounders %in% potential_covariates]),
-          " time-varying confounders are not present in the dataset.", 
-          call. = FALSE)
+  if (length(tv_confounders) > 0) {
+    if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)) {
+      stop (paste(tv_confounders[!tv_confounders %in% potential_covariates]),
+            " time-varying confounders are not present in the dataset.", 
+            call. = FALSE)
+    }
+    
+    if (any(duplicated(tv_confounders))) {
+      stop (sprintf("The following time-varying confounders are duplicated: %s.",
+                    paste(tv_confounders[duplicated(tv_confounders)], collapse = ", ")),
+            call. = FALSE)
+    }
   }
   
   if (sum(ti_confounders %in% potential_covariates) != length(ti_confounders)) {
     stop (paste(ti_confounders[!ti_confounders %in% potential_covariates]),
           " time invariant confounders are not present in the dataset.", 
+          call. = FALSE)
+  }
+  
+  if (any(duplicated(ti_confounders))) {
+    stop (sprintf("The following time invariant confounders are duplicated: %s.",
+                  paste(ti_confounders[duplicated(ti_confounders)], collapse = ", ")),
           call. = FALSE)
   }
   
