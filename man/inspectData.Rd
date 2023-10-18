@@ -14,7 +14,7 @@ inspectData(
   tv_confounders = NULL,
   epochs = NULL,
   hi_lo_cut = NULL,
-  reference = NA,
+  reference = NULL,
   comparison = NULL,
   verbose = TRUE,
   save.out = TRUE
@@ -44,11 +44,11 @@ suffix}
 that reflect high and low values, respectively, for continuous exposure
 (default is median split)}
 
-\item{reference}{(optional)string of "-"-separated "l" and "h" values
+\item{reference}{(optional) list of one or more strings of "-"-separated "l" and "h" values
 indicative of a reference exposure history to which to compare comparison,
 required if comparison is specified}
 
-\item{comparison}{(optional)list of one or more strings of "-"-separated "l"
+\item{comparison}{(optional) list of one or more strings of "-"-separated "l"
 and "h" values indicative of comparison history/histories to compare to
 reference, required if reference is specified}
 
@@ -76,6 +76,12 @@ test <- data.frame(ID = 1:50,
                    D.3 = rnorm(n = 50))
 test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
 
+inspectData(data = test,
+            exposure = "A",
+            exposure_time_pts = c(1, 2, 3),
+            outcome = "D.3",
+            ti_confounders = "C",
+            save.out = FALSE)
 inspectData(data = test,
             exposure = "A",
             exposure_time_pts = c(1, 2, 3),

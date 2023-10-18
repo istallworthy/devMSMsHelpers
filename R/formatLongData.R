@@ -46,7 +46,7 @@
 
 
 formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA,
-                           factor_confounders = NULL, save.out = TRUE){
+                           factor_confounders = NULL, save.out = TRUE) {
   
   if (save.out) {
     if (missing(home_dir)) {
@@ -90,8 +90,8 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
          call. = FALSE)
   }
   
-  if (missing(outcome)){
-    stop("Please supply a single outcome.", 
+  if (missing(outcome)) {
+    stop ("Please supply a single outcome.", 
          call. = FALSE)
   }
   else if (!is.character(outcome) || length(outcome) != 1) {
@@ -140,7 +140,8 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
   # Exposure summary
   
   exposure_summary <- data[data$WAVE %in% exposure_time_pts, , drop = FALSE]
-  exp_names <- colnames(exposure_summary)[(grepl(exposure, colnames(exposure_summary)))]
+  exp_names <- colnames(exposure_summary)[(grepl(exposure, 
+                                                 colnames(exposure_summary)))]
   exp_names <- exp_names[!exp_names %in% "WAVE"]
   
   exposure_summary <- aggregate(as.formula(paste(exp_names, "WAVE", sep = " ~ ")), 
@@ -162,8 +163,10 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
                        format = 'html')
     
     kableExtra::save_kable(k, 
-                           file = file.path(home_dir, paste0(exposure, "_exposure_info.html")))
-    cat(paste0(exposure, " exposure descriptive statistics have now been saved in the home directory"), "\n")
+                           file = file.path(home_dir, paste0(exposure, 
+                                                             "_exposure_info.html")))
+    cat(paste0(exposure, 
+               " exposure descriptive statistics have now been saved in the home directory"), "\n")
     cat("\n")
   }
   
@@ -171,7 +174,8 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
   # Outcome summary
   
   outcome_summary <- data[, !colnames(data) %in% "ID"]
-  out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), colnames(outcome_summary)))]
+  out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), 
+                                                colnames(outcome_summary)))]
   out_names <- out_names[!out_names %in% "WAVE"]
   
   outcome_summary <- aggregate(as.formula(paste(out_names, "WAVE", sep = " ~ ")), 
@@ -181,18 +185,22 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
   colnames(outcome_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
   cat(knitr::kable(outcome_summary, 
-                   caption = paste0("Summary of Outcome ", outcome, " Information"),
+                   caption = paste0("Summary of Outcome ", outcome, 
+                                    " Information"),
                    format = 'pipe'), sep = "\n")
   cat("\n")
   
   if (save.out) {
     k <-  knitr::kable(outcome_summary, 
-                       caption = paste0("Summary of Outcome ", outcome, " Information"), 
+                       caption = paste0("Summary of Outcome ", outcome, 
+                                        " Information"), 
                        format = 'html') 
     kableExtra::save_kable(k, 
-                           file = file.path(home_dir, paste0(outcome, "_outcome_info.html")))
+                           file = file.path(home_dir, paste0(outcome, 
+                                                             "_outcome_info.html")))
     
-    cat(paste0(outcome, " outcome descriptive statistics have now been saved in the home directory"), "\n")
+    cat(paste0(outcome, 
+               " outcome descriptive statistics have now been saved in the home directory"), "\n")
   }
   
   
@@ -206,7 +214,8 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
     
     # Formatting factor covariates
     
-    data[, factor_confounders] <- as.data.frame(lapply(data[, factor_confounders], as.factor))
+    data[, factor_confounders] <- as.data.frame(lapply(data[, factor_confounders], 
+                                                       as.factor))
     
     # Formatting numeric covariates
     
