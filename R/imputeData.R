@@ -34,18 +34,22 @@
 #'                    D.3 = rnorm(n = 50))
 #' test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
 #'
-#' test_miss <- missMethods::delete_MAR_1_to_x(as.data.frame(test), p = 0.20,
+#' t_m <- missMethods::delete_MAR_1_to_x(as.data.frame(test), p = 0.20,
 #'                                             cols_mis = c("A.1", "B.2", "C"),
 #'                                             cols_ctrl = c("B.1", "B.1", "B.1"), 3)
-#' test_i <- imputeData(data = test_miss,
-#'                      m = 3,
-#'                      method = "rf",
-#'                      exposure = "A",
-#'                      outcome = "D.3",
-#'                      para_proc = TRUE,
-#'                      read_imps_from_file = "no",
-#'                      save.out = FALSE)
-
+#' i <- imputeData(data = t_m,
+#'                 exposure = "A",
+#'                 outcome = "D.3",
+#'                 save.out = FALSE)
+#' i <- imputeData(data = t_m,
+#'                 m = 3,
+#'                 method = "pmm",
+#'                 maxit = 1,
+#'                 exposure = "A",
+#'                 outcome = "D.3",
+#'                 para_proc = TRUE,
+#'                 read_imps_from_file = "no",
+#'                 save.out = FALSE)
 
 imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outcome, maxit = NA, para_proc = TRUE,
                        read_imps_from_file = "no", save.out = TRUE, ...) {
@@ -99,7 +103,7 @@ imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outco
   if (is.na(method)) {
     method <- "rf"
   }
-    
+  
   if ((!is.numeric(m) && !is.na(m)) || length(m) != 1) {
     stop ("Please provide a single integer value number of imputations.", 
           call. = FALSE)
@@ -118,7 +122,7 @@ imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outco
   
   if (!is.logical(save.out)) {
     stop ("Please set save.out to either TRUE or FALSE.", 
-         call. = FALSE)
+          call. = FALSE)
   }
   else if (length(save.out) != 1) {
     stop ("Please provide a single TRUE or FALSE value to save.out.", 
@@ -136,16 +140,36 @@ imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outco
   if (read_imps_from_file == "yes") {
     imputed_datasets <- list()
     
-    if (!file.exists(sprintf("%s/imputations/%s-%s_all_imp.rds",
-                             home_dir, exposure, outcome))) {
-      stop ("Imputations have not been created and saved locally. 
-           Please set 'read_imps_from_file' == 'no' and re-run.", 
+    if (!file.exists(file.path(home_dir, "imputations", 
+                               sprintf("%s-%s_all_imp.rds",
+                                       exposure, outcome)))) {
+      
+      stop ("Imputations have not been created and saved locally. Please set 'read_imps_from_file' == 'no' and re-run.", 
             call. = FALSE)
     }
+    
     
     imp <- readRDS(file.path(home_dir, "imputations", 
                              sprintf("%s-%s_all_imp.rds",
                                      exposure, outcome)))
+    
+    if (!mice::is.mids(imp)) {
+      stop ("The locally saved file is not a single mids object. If you have .csv files of data imputed using another program, please read them in as a list.",
+            call. = FALSE)
+    }
+    
+    if (imp$m != m) {
+      stop (sprintf("The locally saved imputed data were imputed %s times, contrary to the m value you supplied.",
+                   imp$m),
+           call. = FALSE)
+    }
+    
+    if (!method %in% imp$method) {
+      warning (sprintf("The locally saved imputed data were imputed using the %s method, contrary to what you supplied you supplied.",
+                   imp$method[3]),
+           call. = FALSE)
+    }
+      
     
     imputed_datasets <- imp
     
@@ -153,6 +177,8 @@ imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outco
     cat(sprintf("Reading in %s imputations from the local folder. \n",
                 imputed_datasets$m))
     cat("\n")
+    
+    
     return (imputed_datasets)
     
   }

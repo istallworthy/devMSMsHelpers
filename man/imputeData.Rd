@@ -65,17 +65,22 @@ test <- data.frame(ID = 1:50,
                    D.3 = rnorm(n = 50))
 test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
 
-test_miss <- missMethods::delete_MAR_1_to_x(as.data.frame(test), p = 0.20,
+t_m <- missMethods::delete_MAR_1_to_x(as.data.frame(test), p = 0.20,
                                             cols_mis = c("A.1", "B.2", "C"),
                                             cols_ctrl = c("B.1", "B.1", "B.1"), 3)
-test_i <- imputeData(data = test_miss,
-                     m = 3,
-                     method = "rf",
-                     exposure = "A",
-                     outcome = "D.3",
-                     para_proc = TRUE,
-                     read_imps_from_file = "no",
-                     save.out = FALSE)
+i <- imputeData(data = t_m,
+                exposure = "A",
+                outcome = "D.3",
+                save.out = FALSE)
+i <- imputeData(data = t_m,
+                m = 3,
+                method = "pmm",
+                maxit = 1,
+                exposure = "A",
+                outcome = "D.3",
+                para_proc = TRUE,
+                read_imps_from_file = "no",
+                save.out = FALSE)
 }
 \seealso{
 {\code{\link[mice:mice]{mice::mice()}},
