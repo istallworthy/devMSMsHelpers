@@ -11,7 +11,7 @@ inspectData(
   exposure_time_pts,
   outcome,
   ti_confounders,
-  tv_confounders = NULL,
+  tv_confounders,
   epochs = NULL,
   hi_lo_cut = NULL,
   reference = NULL,
@@ -35,8 +35,8 @@ created/assessed that correspond to time points when exposure was measured}
 
 \item{ti_confounders}{list of time invariant confounders}
 
-\item{tv_confounders}{(optional) list of time-varying confounders with ".timepoint"
-suffix}
+\item{tv_confounders}{list of time-varying confounders with ".timepoint"
+suffix (time-varying exposure variables requires to be listed here)}
 
 \item{epochs}{(optional) data frame of exposure epoch labels and values}
 
@@ -80,6 +80,7 @@ inspectData(data = test,
             exposure = "A",
             exposure_time_pts = c(1, 2, 3),
             outcome = "D.3",
+            tv_confounders = c("A.1", "A.2", "A.3"),
             ti_confounders = "C",
             save.out = FALSE)
 inspectData(data = test,
