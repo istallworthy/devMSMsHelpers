@@ -89,14 +89,9 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
     stop ("Please supply a single exposure as a character.", 
          call. = FALSE)
   }
-  
-  if (missing(outcome)) {
-    stop ("Please supply a single outcome.", 
-         call. = FALSE)
-  }
-  else if (!is.character(outcome) || length(outcome) != 1) {
-    stop ("Please supply a single outcome as a character.", 
-         call. = FALSE)
+  else if (grepl("\\.", exposure)) {
+    stop ("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
+          call. = FALSE)
   }
   
   if (missing(exposure_time_pts)) {
@@ -106,6 +101,30 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
   else if (!is.numeric(exposure_time_pts)) {
     stop ("Please supply a list of exposure time points as integers.", 
          call. = FALSE)
+  }
+  else if (!length(exposure_time_pts) > 1) {
+    stop ("Please supply at least two exposure time points.",
+          call. = FALSE)
+  }
+  
+  if (missing(outcome)) {
+    stop ("Please supply a single outcome.", 
+          call. = FALSE)
+  }
+  else if (!is.character(outcome) || length(outcome) != 1) {
+    stop ("Please supply a single outcome as a character.", 
+          call. = FALSE)
+  }
+  else if (!grepl("\\.", outcome)) {
+    stop ("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
+          call. = FALSE)
+  }
+  else if (as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) != 
+           exposure_time_pts[length(exposure_time_pts)] && 
+           !as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) > 
+           exposure_time_pts[length(exposure_time_pts)] ) {
+    stop ("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
+          call. = FALSE)
   }
   
   if (!is.logical(save.out)) {

@@ -8,8 +8,8 @@
 #' @param exposure_time_pts list of integers at which weights will be
 #'   created/assessed that correspond to time points when exposure was measured
 #' @param outcome name of outcome variable with ".timepoint" suffix
-#' @param tv_confounders (optional) list of time-varying confounders with ".timepoint"
-#'   suffix
+#' @param tv_confounders list of time-varying confounders with ".timepoint"
+#'   suffix (time-varying exposure variables requires to be listed here)
 #' @param ti_confounders list of time invariant confounders
 #' @param epochs (optional) data frame of exposure epoch labels and values
 #' @param hi_lo_cut (optional) list of two numbers indicating quantile values
@@ -43,6 +43,7 @@
 #'             exposure = "A",
 #'             exposure_time_pts = c(1, 2, 3),
 #'             outcome = "D.3",
+#'             tv_confounders = c("A.1", "A.2", "A.3"),
 #'             ti_confounders = "C",
 #'             save.out = FALSE)
 #' inspectData(data = test,
@@ -81,7 +82,7 @@
 #'             save.out = FALSE)
 
 
-inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, ti_confounders, tv_confounders = NULL, epochs = NULL,
+inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, ti_confounders, tv_confounders, epochs = NULL,
                          hi_lo_cut = NULL, reference = NULL, comparison = NULL, verbose = TRUE, save.out = TRUE) {
   
   if (save.out) {
@@ -123,13 +124,8 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
     stop ("Please supply a single exposure as a character.",
           call. = FALSE)
   }
-  
-  if (missing(outcome)) {
-    stop ("Please supply a single outcome.", 
-          call. = FALSE)
-  }  
-  else if (!is.character(outcome) || length(outcome) != 1) { 
-    stop ("Please supply a single outcome as a character.", 
+  else if (grepl("\\.", exposure)) {
+    stop ("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
           call. = FALSE)
   }
   
@@ -141,14 +137,60 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
     stop ("Please supply a list of exposure time points (at least one) as integers.", 
           call. = FALSE)
   }
+  else if (!length(exposure_time_pts) > 1) {
+    stop ("Please supply at least two exposure time points.",
+          call. = FALSE)
+  }
+  
+  if (missing(outcome)) {
+    stop ("Please supply a single outcome.", 
+          call. = FALSE)
+  }  
+  else if (!is.character(outcome) || length(outcome) != 1) { 
+    stop ("Please supply a single outcome as a character.", 
+          call. = FALSE)
+  }
+  else if (!grepl("\\.", outcome)) {
+    stop ("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
+          call. = FALSE)
+  }
+  else if (as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) != 
+           exposure_time_pts[length(exposure_time_pts)] && 
+           !as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) > 
+           exposure_time_pts[length(exposure_time_pts)] ) {
+    stop ("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
+          call. = FALSE)
+  }
   
   if (missing(tv_confounders)) {
-    warning ("You have not supplied any time-varying confounders. Any time-varying exposure variables should be listed in tv_confounders.", 
-             call. = FALSE)
-    tv_confounders <- NULL
+    stop ("You have not supplied any time-varying confounders. Any time-varying exposure variables should be listed in tv_confounders.", 
+          call. = FALSE)
   }
+  else if (!is.character(tv_confounders)) {
+    stop ("Please provide a list of time-varying confounders as character strings.",
+          call. = FALSE)
+  }
+  else if (any(!grepl("\\.", tv_confounders))) {
+    stop ("Please list all time-varying confounders with suffix '.time' that should match variables in dataset.",
+          call. = FALSE)
+  }
+  else if (any(!paste(exposure, exposure_time_pts, sep = ".") %in% tv_confounders)) {
+    stop ("Please include all emeasured exposure variables in wide format in tv_confounders.",
+          call. = FALSE)
+  }
+  else if (any(!exposure_time_pts %in% as.numeric(unlist(sapply(strsplit(tv_confounders, 
+                                                                         "\\."), "[", 2))))) {
+    stop ("Exposure time points and the time points at which time-varying confounders are measured must fully overlap.",
+          call. = FALSE) 
+  }
+  
+  
   if (missing(ti_confounders)) {
     stop ("Please supply a list of time invariant confounders.", 
+          call. = FALSE)
+  }
+  else if (any(grepl("\\.", ti_confounders))) {
+    stop ("Time invariant confounders should not include the suffix '.time' or any '.' special characters.",
           call. = FALSE)
   }
   
@@ -170,17 +212,16 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
           call. = FALSE)
   }
   
-  if (!is.null(tv_confounders)) {
-    time_pts <- as.numeric(sapply(strsplit(tv_confounders[grepl(exposure, 
-                                                                tv_confounders)], 
-                                           "\\."), "[", 2))
-    if (length(exposure_time_pts) > 1) {
-      if (any(!paste(exposure, exposure_time_pts, sep = ".") %in% tv_confounders)) {
-        stop ("Please include all exposure variables in wide format in tv_confounders.",
-              call. = FALSE)
-      }
+  time_pts <- as.numeric(sapply(strsplit(tv_confounders[grepl(exposure, 
+                                                              tv_confounders)], 
+                                         "\\."), "[", 2))
+  if (length(exposure_time_pts) > 1) {
+    if (any(!paste(exposure, exposure_time_pts, sep = ".") %in% tv_confounders)) {
+      stop ("Please include all exposure variables in wide format in tv_confounders.",
+            call. = FALSE)
     }
   }
+  
   else {
     time_pts <- NULL
   }
@@ -238,28 +279,29 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
     data <- data[[1]]
   }
   
+  
   # long format to wide
   
   if ("WAVE" %in% colnames(data)) {
     
-    if (!is.null(tv_confounders)) {
-      v <- sapply(strsplit(tv_confounders, "\\."), "[", 1)
-      v <- v[!duplicated(v)]
-      data_wide <- stats::reshape(data = data_long, 
-                                  idvar = "ID", 
-                                  v.names = v, 
-                                  timevar = "WAVE",
-                                  direction = "wide")
-    }
-    else {
-      data_wide <- stats::reshape(data = data_long, 
-                                  idvar = "ID", 
-                                  v.names = paste(exposure, exposure_time_pts, 
-                                                  sep = "."), 
-                                  timevar = "WAVE",
-                                  direction = "wide")
-    }
-    
+    # if (!is.null(tv_confounders)) {
+    v <- sapply(strsplit(tv_confounders, "\\."), "[", 1)
+    v <- v[!duplicated(v)]
+    data_wide <- stats::reshape(data = data_long, 
+                                idvar = "ID", 
+                                v.names = v, 
+                                timevar = "WAVE",
+                                direction = "wide")
+    # }
+    # else {
+    #   data_wide <- stats::reshape(data = data_long, 
+    #                               idvar = "ID", 
+    #                               v.names = paste(exposure, exposure_time_pts, 
+    #                                               sep = "."), 
+    #                               timevar = "WAVE",
+    #                               direction = "wide")
+    # }
+    # 
     
     #removing all NA cols (i.e., when data were not collected)
     
@@ -278,24 +320,59 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   exposure_type <- if (inherits(data[, paste0(exposure, '.', exposure_time_pts[1])], 
                                 "numeric")) "continuous" else "binary"
   
+  
+  
+  #checking that all measured exposure vars are in tv_confounders
+  
+  if (any(!names(data)[sapply(strsplit(names(data), "\\."), "[", 1) %in% exposure] 
+          %in% tv_confounders)) {
+    warning ("All measured time-varying exposure variables should be included as time-varying confounders.",
+             call. = FALSE)
+  }
+  
+  #checking any tv outcome < outcome time pt listed as tv confounder 
+  
+  if (length(names(data)[sapply(strsplit(names(data), "\\."), "[", 1) %in% 
+                         sapply(strsplit(outcome, "\\."), "[", 1)]) > 1 &&
+      any(!names(data)[sapply(strsplit(names(data), "\\."), "[", 1) %in% 
+                       sapply(strsplit(outcome, "\\."), "[", 1)] 
+          %in% tv_confounders)) {
+    warning ("All measured time-varying outcome variables at times earlier than the final outcome time point should be included as time-varying confounders.",
+             call. = FALSE)
+  }
+  
+  #checking that tv_confounder time pts are equal to or subset of time pts when exposure was measured in data
+  
+  if ( any(!sapply(strsplit(names(data)[sapply(strsplit(names(data), "\\."), "[", 1) 
+                                        %in% exposure], "\\."), "[", 2) %in%
+           sapply(strsplit(tv_confounders, "\\."), "[", 2)) ||
+       any(!sapply(strsplit(tv_confounders, "\\."), "[", 2) %in% 
+           sapply(strsplit(names(data)[sapply(strsplit(names(data), "\\."), "[", 1) 
+                                       %in% exposure], "\\."), "[", 2))) {
+    stop ("The time points at which time-varying confounders are measured must be equal to or a subset of the time points at which exposure is measured in the data.",
+          call. = FALSE)
+  }
+  
+  
+  
   # Confounder summary
   
   potential_covariates <- colnames(data)[!(colnames(data) %in% c("ID"))]
   
-  if (!is.null(tv_confounders)) {
-    if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)) {
-      stop (paste(tv_confounders[!tv_confounders %in% potential_covariates]),
-            " time-varying confounders are not present in the dataset.", 
-            call. = FALSE)
-    }
-    
-    if (any(duplicated(tv_confounders))) {
-      stop (sprintf("The following time-varying confounders are duplicated: %s.",
-                    paste(tv_confounders[duplicated(tv_confounders)], 
-                          collapse = ", ")),
-            call. = FALSE)
-    }
+  
+  if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)) {
+    stop (paste(tv_confounders[!tv_confounders %in% potential_covariates]),
+          " time-varying confounders are not present in the dataset.", 
+          call. = FALSE)
   }
+  
+  if (any(duplicated(tv_confounders))) {
+    stop (sprintf("The following time-varying confounders are duplicated: %s.",
+                  paste(tv_confounders[duplicated(tv_confounders)], 
+                        collapse = ", ")),
+          call. = FALSE)
+  }
+  
   
   if (sum(ti_confounders %in% potential_covariates) != length(ti_confounders)) {
     stop (paste(ti_confounders[!ti_confounders %in% potential_covariates]),
@@ -344,36 +421,36 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
                                     "[", 1)))[order(unique(c(ti_confounders,
                                                              sapply(strsplit(all_potential_covariates,
                                                                              "\\."), "[", 1))))]
-  if (!is.null(time_pts)) {
-    rownames(test) <- time_pts
-    
-    for (l in seq_len(nrow(test))) {
-      z = c(sapply(strsplit(all_potential_covariates[grepl(paste0(".", rownames(test)[l]),
-                                                           all_potential_covariates)], 
-                            "\\."), "[", 1), ti_confounders)
-      z = z[!duplicated(z)]
-      test[l, z ] <- 1
-    }
-    
-    test <- test[, colnames(test)[!(colnames(test) %in% c("ID"))]]
-    NumTimePts <- data.frame(NumTimePts = colSums(test, na.rm = TRUE))
-    test <- rbind(test, t(NumTimePts))
-    NumVars <- data.frame(NumVars = rowSums(test, na.rm = TRUE))
-    test[seq_len(nrow(test)), ncol(test) + 1] <- NumVars
-    
-    if (save.out) {
-      write.csv(test, 
-                file.path(home_dir,  
-                          sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt.csv",
-                                  exposure, outcome)),
-                row.names = TRUE)
-      if (verbose) {
-        print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.")
-        cat("\n")
-        
-      }
+  
+  rownames(test) <- time_pts
+  
+  for (l in seq_len(nrow(test))) {
+    z = c(sapply(strsplit(all_potential_covariates[grepl(paste0(".", rownames(test)[l]),
+                                                         all_potential_covariates)], 
+                          "\\."), "[", 1), ti_confounders)
+    z = z[!duplicated(z)]
+    test[l, z ] <- 1
+  }
+  
+  test <- test[, colnames(test)[!(colnames(test) %in% c("ID"))]]
+  NumTimePts <- data.frame(NumTimePts = colSums(test, na.rm = TRUE))
+  test <- rbind(test, t(NumTimePts))
+  NumVars <- data.frame(NumVars = rowSums(test, na.rm = TRUE))
+  test[seq_len(nrow(test)), ncol(test) + 1] <- NumVars
+  
+  if (save.out) {
+    write.csv(test, 
+              file.path(home_dir,  
+                        sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt.csv",
+                                exposure, outcome)),
+              row.names = TRUE)
+    if (verbose) {
+      print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.")
+      cat("\n")
+      
     }
   }
+  
   
   if (verbose) {
     message(sprintf("USER ALERT: Below are the %s variables spanning %s unique domains that will be treated as confounding variables for the relation between %s and %s. \n",
