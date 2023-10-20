@@ -279,7 +279,6 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
     data <- data[[1]]
   }
   
-  
   # long format to wide
   
   if ("WAVE" %in% colnames(data)) {
@@ -292,16 +291,6 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
                                 v.names = v, 
                                 timevar = "WAVE",
                                 direction = "wide")
-    # }
-    # else {
-    #   data_wide <- stats::reshape(data = data_long, 
-    #                               idvar = "ID", 
-    #                               v.names = paste(exposure, exposure_time_pts, 
-    #                                               sep = "."), 
-    #                               timevar = "WAVE",
-    #                               direction = "wide")
-    # }
-    # 
     
     #removing all NA cols (i.e., when data were not collected)
     
@@ -317,8 +306,23 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
     
   }
   
+  #checking exposure type
+  
+  if (any(as.logical(unlist(lapply(data[, paste0(exposure, '.', exposure_time_pts)], function(x){
+    !inherits(x, "numeric") && !inherits(x, "integer")
+  }))))) {
+    stop ("Please provide an exposure in numeric or integer form.",
+          call. = FALSE)
+  }
+  else if (any(as.logical(unlist(lapply(data[, paste0(exposure, '.', exposure_time_pts)], function(x) {
+    inherits(x, "integer") && unique(x) != c(1, 0) } ))))) {
+    stop ("Please make sure your exposure levels are 1s and 0s for integer exposures.",
+          call. = FALSE)
+  }
+  
   exposure_type <- if (inherits(data[, paste0(exposure, '.', exposure_time_pts[1])], 
                                 "numeric")) "continuous" else "binary"
+  
   
   
   
@@ -598,11 +602,18 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
     }
   }
   
+  
   # Outcome summary
   
   out_names <- colnames(data)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), 
                                      colnames(data)))]
   outcome_summary <- data[, out_names]
+  
+  if (verbose) {
+    cat(sprintf("Your outcome variable(s) have the following type(s): %s",
+                paste(class(data[, out_names]), collapse = ", ")))
+    cat("\n")
+  }
   outcome_summary <- summary(outcome_summary)
   
   if (save.out) {
