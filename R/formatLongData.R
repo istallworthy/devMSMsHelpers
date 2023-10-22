@@ -45,98 +45,98 @@
 #'                                    save.out = FALSE)
 
 
-formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA,
-                           factor_confounders = NULL, save.out = TRUE) {
+formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA,
+                           factor_confounders = NULL, home_dir = NA, save.out = TRUE) {
   
   if (save.out) {
     if (missing(home_dir)) {
-      stop ("Please supply a home directory.", 
+      stop("Please supply a home directory.", 
            call. = FALSE)
     }
     else if (!is.character(home_dir)) {
-      stop ("Please provide a valid home directory path as a string if you wish to save output locally.", 
+      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
            call. = FALSE)
     }
     else if (!dir.exists(home_dir)) {
-      stop ('Please provide a valid home directory.', 
+      stop('Please provide a valid home directory.', 
            call. = FALSE)
     }
   }
   
   if (missing(data)) {
-    stop ("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
+    stop("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
          call. = FALSE)
   }
   else if (!is.data.frame(data)) {
-    stop ("Please provide a long dataset as a data frame.",
+    stop("Please provide a long dataset as a data frame.",
          call. = FALSE)
   }
   
   if (is.na(time_var) && !"WAVE" %in% colnames(data)) {
-    stop ("Please provide a long dataset with a time variable WAVE or specify the time-variable input.",
+    stop("Please provide a long dataset with a time variable WAVE or specify the time-variable input.",
          call. = FALSE)
   }
   else if (!is.na(time_var) && !time_var %in% colnames(data)) {
-    stop ("Please provide a long dataset with a time variable WAVE or specify the time-variable input.",
+    stop("Please provide a long dataset with a time variable WAVE or specify the time-variable input that corresponds to your data.",
          call. = FALSE)
   }  
   
   if (missing(exposure)) {
-    stop ("Please supply a single exposure.", 
+    stop("Please supply a single exposure.", 
          call. = FALSE)
   } 
   else if (!is.character(exposure) || length(exposure) != 1) {
-    stop ("Please supply a single exposure as a character.", 
+    stop("Please supply a single exposure as a character.", 
          call. = FALSE)
   }
   else if (grepl("\\.", exposure)) {
-    stop ("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
+    stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
           call. = FALSE)
   }
   
   if (missing(exposure_time_pts)) {
-    stop ("Please supply the exposure time points at which you wish to create weights.", 
+    stop("Please supply the exposure time points at which you wish to create weights.", 
          call. = FALSE)
   }
   else if (!is.numeric(exposure_time_pts)) {
-    stop ("Please supply a list of exposure time points as integers.", 
+    stop("Please supply a list of exposure time points as integers.", 
          call. = FALSE)
   }
   else if (!length(exposure_time_pts) > 1) {
-    stop ("Please supply at least two exposure time points.",
+    stop("Please supply at least two exposure time points.",
           call. = FALSE)
   }
   
   if (missing(outcome)) {
-    stop ("Please supply a single outcome.", 
+    stop("Please supply a single outcome.", 
           call. = FALSE)
   }
   else if (!is.character(outcome) || length(outcome) != 1) {
-    stop ("Please supply a single outcome as a character.", 
+    stop("Please supply a single outcome as a character.", 
           call. = FALSE)
   }
   else if (!grepl("\\.", outcome)) {
-    stop ("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
+    stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
           call. = FALSE)
   }
   else if (as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) != 
            exposure_time_pts[length(exposure_time_pts)] && 
            !as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) > 
            exposure_time_pts[length(exposure_time_pts)] ) {
-    stop ("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
+    stop("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
           call. = FALSE)
   }
   
   if (!is.logical(save.out)) {
-    stop ("Please set save.out to either TRUE or FALSE.", 
+    stop("Please set save.out to either TRUE or FALSE.", 
          call. = FALSE)
   }
   else if (length(save.out) != 1) {
-    stop ("Please provide a single TRUE or FALSE value to save.out.", 
+    stop("Please provide a single TRUE or FALSE value to save.out.", 
          call. = FALSE)
   }
   
-  options(readr.num_columns = 0)
+  #options(readr.num_columns = 0)
   
   
   # Reading and formatting LONG dataset
@@ -149,7 +149,7 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
   }
   
   if (!is.na(missing)) {
-    is.na(data[data == missing]) <- TRUE
+    data[data == missing] <- NA
   }
   
   if (which(colnames(data) == "ID") != 1) {
@@ -192,14 +192,14 @@ formatLongData <- function(home_dir = NA, data, exposure, exposure_time_pts, out
   
   # Outcome summary
   
-  outcome_summary <- data[, !colnames(data) %in% "ID"]
+  outcome_summary <- data #as.data.frame(data[, colnames(data)[colnames(data) %in% sapply(strsplit(outcome, "\\."),"[", 1)]])
   out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), 
-                                                colnames(outcome_summary)))]
+                                               colnames(outcome_summary)))]
   out_names <- out_names[!out_names %in% "WAVE"]
   
   outcome_summary <- aggregate(as.formula(paste(out_names, "WAVE", sep = " ~ ")), 
                                data = outcome_summary,
-                               FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
+                               FUN = function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE), min(x, na.rm = TRUE), max(x, na.rm = TRUE)))
   outcome_summary <- do.call(data.frame, outcome_summary)
   colnames(outcome_summary) <- c("WAVE", "mean", "sd", "min", "max")
   

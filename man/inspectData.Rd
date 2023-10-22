@@ -6,7 +6,6 @@
 \usage{
 inspectData(
   data,
-  home_dir,
   exposure,
   exposure_time_pts,
   outcome,
@@ -16,6 +15,7 @@ inspectData(
   hi_lo_cut = NULL,
   reference = NULL,
   comparison = NULL,
+  home_dir = NA,
   verbose = TRUE,
   save.out = TRUE
 )
@@ -23,8 +23,6 @@ inspectData(
 \arguments{
 \item{data}{data in wide format as: a data frame, list of imputed data
 frames, or mids object}
-
-\item{home_dir}{(optional) path to home directory (required if save.out = TRUE)}
 
 \item{exposure}{name of exposure variable}
 
@@ -51,6 +49,8 @@ required if comparison is specified}
 \item{comparison}{(optional) list of one or more strings of "-"-separated "l"
 and "h" values indicative of comparison history/histories to compare to
 reference, required if reference is specified}
+
+\item{home_dir}{(optional) path to home directory (required if save.out = TRUE)}
 
 \item{verbose}{(optional) TRUE or FALSE indicator for user output (default is
 TRUE)}

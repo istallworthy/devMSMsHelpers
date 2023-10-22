@@ -1,9 +1,21 @@
 Package: devMSMsHelpers
-Title: Helper functions to accompany the devMSMs package.
+Title: Helper functions to accompany the devMSMs package
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+Authors@R: c(person("Isabella", "Stallworthy",
+            email = "istall@seas.upenn.edu",
+            role = c("aut", "cre")),
+            person("Meriah", "DeJoseph",
+            email = "meriahd@stanford.edu",
+            role = c("aut")),
+            person("Emily", "Padrutt",
+            email = "padru004@umn.edu",
+            role = c("aut")),
+            person("Noah", "Greifer",
+            email = "ngreifer@iq.harvard.edu",
+            role = c("aut")),
+            person("Daniel", "Berry",
+            email = "dberry@umn.edu",
+            role = c("aut")))
 Description: What the package does (one paragraph).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
@@ -11,17 +23,19 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports:
-    doRNG,
-    foreach,
     knitr, 
     mice, 
-    missMethods,
-    parallel,
-    doParallel,
     tibble,
     kableExtra,
     ggplot2,
     ggcorrplot,
-    ranger
+    ranger,
+    tibble,
+    rlang
+Suggests:
+    missMethods,
+    doParallel,
+    foreach,
+    doRNG
 Remotes: 
     gitHub::istallworthy/devMSMs
