@@ -489,7 +489,7 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
     }
     
     if (sum(sapply(data, is.character)) > 0) {
-      warnin (paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", 
+      warning(paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", 
                             collapse = ", "),
                       " are of class character.", " The package cannot accept character variables."), 
                call. = FALSE)
@@ -509,7 +509,7 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
   
   # Makes correlation table
   
-  corr_matrix <- cor(as.data.frame(lapply(data2[, colnames(data2) != "ID"],
+  corr_matrix <- stats::cor(as.data.frame(lapply(data2[, colnames(data2) != "ID"],
                                           as.numeric)), 
                      use = "pairwise.complete.obs")
   

@@ -2,7 +2,7 @@
 #' processing to speed up
 #'
 #' @export
-#' @import ranger
+#' @importFrom doRNG %dorng%
 #' @seealso {[mice::mice()],
 #'   <https://cran.r-project.org/web/packages/mice/index.html>}
 #' @param data data in wide format
@@ -47,7 +47,7 @@
 #'                 exposure = "A",
 #'                 outcome = "D.3",
 #'                 para_proc = TRUE,
-#'                 read_imps_from_file = "FALSE",
+#'                 read_imps_from_file = FALSE,
 #'                 save.out = FALSE)
 
 imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA, para_proc = TRUE,

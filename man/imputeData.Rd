@@ -79,7 +79,7 @@ i <- imputeData(data = t_m,
                 exposure = "A",
                 outcome = "D.3",
                 para_proc = TRUE,
-                read_imps_from_file = "FALSE",
+                read_imps_from_file = FALSE,
                 save.out = FALSE)
 \dontshow{\}) # examplesIf}
 }
