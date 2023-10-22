@@ -7,14 +7,14 @@ processing to speed up}
 \usage{
 imputeData(
   data,
-  m = NA,
-  method = NA,
-  home_dir = NA,
   exposure,
   outcome,
+  m = NA,
+  method = NA,
   maxit = NA,
   para_proc = TRUE,
-  read_imps_from_file = "no",
+  home_dir = NA,
+  read_imps_from_file = FALSE,
   save.out = TRUE,
   ...
 )
@@ -22,24 +22,24 @@ imputeData(
 \arguments{
 \item{data}{data in wide format}
 
+\item{exposure}{name of exposure variable}
+
+\item{outcome}{name of outcome variable with ".timepoint" suffix}
+
 \item{m}{(optional) integer number of imputed datasets (default is 5)}
 
 \item{method}{(optional) character string of imputation method from mice()
 (default is random forest "rf")}
-
-\item{home_dir}{path to home directory (required if save.out = TRUE)}
-
-\item{exposure}{name of exposure variable}
-
-\item{outcome}{name of outcome variable with ".timepoint" suffix}
 
 \item{maxit}{(optional) maximum number of iterations in mice (default is 5)}
 
 \item{para_proc}{(optional) TRUE/FALSE whether to do parallel processing
 using multiple cores to speed up process (default = TRUE)}
 
-\item{read_imps_from_file}{(optional) "yes" or "no" indicatorto read in weights
-that have been previously run and saved locally (default is "no")}
+\item{home_dir}{path to home directory (required if save.out = TRUE)}
+
+\item{read_imps_from_file}{(optional) TRUE or FALSE indicator to read in weights
+that have been previously run and saved locally (default is FALSE)}
 
 \item{save.out}{(optional) TRUE or FALSE indicator to save output and
 intermediary output locally (default is TRUE)}
@@ -64,7 +64,7 @@ test <- data.frame(ID = 1:50,
                    C = rnorm(n = 50),
                    D.3 = rnorm(n = 50))
 test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
-
+\dontshow{if (requireNamespace("missMethods", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 t_m <- missMethods::delete_MAR_1_to_x(as.data.frame(test), p = 0.20,
                                             cols_mis = c("A.1", "B.2", "C"),
                                             cols_ctrl = c("B.1", "B.1", "B.1"), 3)
@@ -79,8 +79,9 @@ i <- imputeData(data = t_m,
                 exposure = "A",
                 outcome = "D.3",
                 para_proc = TRUE,
-                read_imps_from_file = "no",
+                read_imps_from_file = "FALSE",
                 save.out = FALSE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 {\code{\link[mice:mice]{mice::mice()}},

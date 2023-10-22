@@ -82,16 +82,16 @@
 #'             save.out = FALSE)
 
 
-inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, ti_confounders, tv_confounders, epochs = NULL,
-                         hi_lo_cut = NULL, reference = NULL, comparison = NULL, verbose = TRUE, save.out = TRUE) {
+inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confounders, tv_confounders, epochs = NULL,
+                         hi_lo_cut = NULL, reference = NULL, comparison = NULL, home_dir = NA, verbose = TRUE, save.out = TRUE) {
   
   if (save.out) {
     if (missing(home_dir)) {
-      stop ("Please supply a home directory.", 
+      stop("Please supply a home directory.", 
             call. = FALSE)
     }
     else if (!is.character(home_dir)) {
-      stop ("Please provide a valid home directory path as a string if you wish to save output locally.", 
+      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
             call. = FALSE)
     }
     else if (!dir.exists(home_dir)) {
@@ -101,114 +101,113 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   }
   
   if (missing(data)) {
-    stop ("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
+    stop("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
           call. = FALSE)
   }
   else if (!mice::is.mids(data) && !is.data.frame(data) && 
            !inherits(data, "list")) {
-    stop ("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", 
+    stop("Please provide either a 'mids' object, a data frame, or a list of imputed csv files in the 'data' field.", 
           call. = FALSE)
   }
   else if (is.list(data) && !is.data.frame(data)  && !mice::is.mids(data)) {
     if (sum(sapply(data, is.data.frame)) != length(data)) {
-      stop ("Please supply a list of data frames that have been imputed.", 
+      stop("Please supply a list of data frames that have been imputed.", 
             call. = FALSE)
     }
   }
   
   if (missing(exposure)) {
-    stop ("Please supply a single exposure.", 
+    stop("Please supply a single exposure.", 
           call. = FALSE)
   }  
   else if (!is.character(exposure) || length(exposure) != 1) {
-    stop ("Please supply a single exposure as a character.",
+    stop("Please supply a single exposure as a character.",
           call. = FALSE)
   }
   else if (grepl("\\.", exposure)) {
-    stop ("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
+    stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
           call. = FALSE)
   }
   
   if (missing(exposure_time_pts)) {
-    stop ("Please supply the exposure time points at which you wish to create weights.", 
+    stop("Please supply the exposure time points at which you wish to create weights.", 
           call. = FALSE)
   }  
   else if (!is.numeric(exposure_time_pts)) {
-    stop ("Please supply a list of exposure time points (at least one) as integers.", 
+    stop("Please supply a list of exposure time points (at least one) as integers.", 
           call. = FALSE)
   }
   else if (!length(exposure_time_pts) > 1) {
-    stop ("Please supply at least two exposure time points.",
+    stop("Please supply at least two exposure time points.",
           call. = FALSE)
   }
   
   if (missing(outcome)) {
-    stop ("Please supply a single outcome.", 
+    stop("Please supply a single outcome.", 
           call. = FALSE)
   }  
   else if (!is.character(outcome) || length(outcome) != 1) { 
-    stop ("Please supply a single outcome as a character.", 
+    stop("Please supply a single outcome as a character.", 
           call. = FALSE)
   }
   else if (!grepl("\\.", outcome)) {
-    stop ("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
+    stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
           call. = FALSE)
   }
   else if (as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) != 
            exposure_time_pts[length(exposure_time_pts)] && 
            !as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) > 
            exposure_time_pts[length(exposure_time_pts)] ) {
-    stop ("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
+    stop("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
           call. = FALSE)
   }
   
   if (missing(tv_confounders)) {
-    stop ("You have not supplied any time-varying confounders. Any time-varying exposure variables should be listed in tv_confounders.", 
+    stop("You have not supplied any time-varying confounders. Any time-varying exposure variables should be listed in tv_confounders.", 
           call. = FALSE)
   }
   else if (!is.character(tv_confounders)) {
-    stop ("Please provide a list of time-varying confounders as character strings.",
+    stop("Please provide a list of time-varying confounders as character strings.",
           call. = FALSE)
   }
   else if (any(!grepl("\\.", tv_confounders))) {
-    stop ("Please list all time-varying confounders with suffix '.time' that should match variables in dataset.",
+    stop("Please list all time-varying confounders with suffix '.time' that should match variables in dataset.",
           call. = FALSE)
   }
   else if (any(!paste(exposure, exposure_time_pts, sep = ".") %in% tv_confounders)) {
-    stop ("Please include all emeasured exposure variables in wide format in tv_confounders.",
+    stop("Please include all emeasured exposure variables in wide format in tv_confounders.",
           call. = FALSE)
   }
   else if (any(!exposure_time_pts %in% as.numeric(unlist(sapply(strsplit(tv_confounders, 
                                                                          "\\."), "[", 2))))) {
-    stop ("Exposure time points and the time points at which time-varying confounders are measured must fully overlap.",
+    stop("Exposure time points and the time points at which time-varying confounders are measured must fully overlap.",
           call. = FALSE) 
   }
   
-  
   if (missing(ti_confounders)) {
-    stop ("Please supply a list of time invariant confounders.", 
+    stop("Please supply a list of time invariant confounders.", 
           call. = FALSE)
   }
   else if (any(grepl("\\.", ti_confounders))) {
-    stop ("Time invariant confounders should not include the suffix '.time' or any '.' special characters.",
+    stop("Time invariant confounders should not include the suffix '.time' or any '.' special characters.",
           call. = FALSE)
   }
   
   if (!is.logical(verbose)) {
-    stop ("Please set verbose to either TRUE or FALSE.", 
+    stop("Please set verbose to either TRUE or FALSE.", 
           call. = FALSE)
   }
-  else if (length(verbose) != 1) {
+  else if(length(verbose) != 1) {
     stop ("Please provide a single TRUE or FALSE value to verbose.", 
           call. = FALSE)
   }
   
   if (!is.logical(save.out)) {
-    stop ("Please set save.out to either TRUE or FALSE.", 
+    stop("Please set save.out to either TRUE or FALSE.", 
           call. = FALSE)
   }
   else if (length(save.out) != 1) {
-    stop ("Please provide a single TRUE or FALSE value to save.out.", 
+    stop("Please provide a single TRUE or FALSE value to save.out.", 
           call. = FALSE)
   }
   
@@ -217,7 +216,7 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
                                          "\\."), "[", 2))
   if (length(exposure_time_pts) > 1) {
     if (any(!paste(exposure, exposure_time_pts, sep = ".") %in% tv_confounders)) {
-      stop ("Please include all exposure variables in wide format in tv_confounders.",
+      stop("Please include all exposure variables in wide format in tv_confounders.",
             call. = FALSE)
     }
   }
@@ -232,58 +231,53 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   
   #evaluates history makeup for all imputed datasets 
   
-  if (mice::is.mids(data)) {
-    
-    lapply(1:data$m, function (x) {
-      data2 <- mice::complete(data, x)
+  if (verbose) {
+    if (mice::is.mids(data)) {
       
-      if (verbose) {
+      lapply(1:data$m, function(x) {
+        data2 <- mice::complete(data, x)
+        
         message(sprintf("Imputation %s", x))
-      }
+        
+        
+        devMSMs::eval_hist(data = data2, exposure = exposure, epochs = epochs,
+                           time_pts = exposure_time_pts, hi_lo_cut = hi_lo_cut, 
+                           ref = reference, comps = comparison)
+      } )
       
-      devMSMs::eval_hist(data = data2, exposure, epochs,
-                         exposure_time_pts, hi_lo_cut, ref = reference, 
-                         comps = comparison, verbose)
-    } )
-    
-    #conducts rest on just first imputed dataset
-    
-    if (verbose) {
+      #conducts rest on just first imputed dataset
+      
       message("The following inspection is conducted on the first imputed dataset.")
+      
+      data <- as.data.frame(mice::complete(data, 1))
     }
     
-    data <- as.data.frame(mice::complete(data, 1))
-  }
-  
-  else if (inherits(data, "list") && !is.data.frame(data)) { 
-    
-    lapply(1:length(data), function (x) {
+    else if (inherits(data, "list") && !is.data.frame(data)) { 
       
-      data2 <- data[[x]]
-      
-      if (verbose) {
+      lapply(1:length(data), function(x) {
+        
+        data2 <- data[[x]]
+        
         message(sprintf("Imputation %s", x))
-      }
+        
+        devMSMs::eval_hist(data = data2, exposure = exposure, epochs = epochs,
+                           time_pts = exposure_time_pts, hi_lo_cut = hi_lo_cut, 
+                           ref = reference, comps = comparison)
+      } )
       
-      devMSMs::eval_hist(data = data2, exposure, epochs,
-                         exposure_time_pts, hi_lo_cut, ref = reference, 
-                         comps = comparison, verbose)
-    } )
-    
-    #conducts rest on just first imputed dataset
-    
-    if (verbose) {
+      #conducts rest on just first imputed dataset
+      
       message("The following inspection is conducted on the first imputed dataset.")
+      
+      
+      data <- data[[1]]
     }
     
-    data <- data[[1]]
   }
-  
   # long format to wide
   
   if ("WAVE" %in% colnames(data)) {
     
-    # if (!is.null(tv_confounders)) {
     v <- sapply(strsplit(tv_confounders, "\\."), "[", 1)
     v <- v[!duplicated(v)]
     data_wide <- stats::reshape(data = data_long, 
@@ -300,7 +294,7 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   
   
   if (!inherits(data, "data.frame")) {
-    warning (sprintf("Your data is a %s. Convert to data frame before running devMSMs.",
+    warning(sprintf("Your data is a %s. Convert to data frame before running devMSMs.",
                      class(data)),
              call. = FALSE)
     
@@ -311,12 +305,12 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   if (any(as.logical(unlist(lapply(data[, paste0(exposure, '.', exposure_time_pts)], function(x){
     !inherits(x, "numeric") && !inherits(x, "integer")
   }))))) {
-    stop ("Please provide an exposure in numeric or integer form.",
+    stop("Please provide an exposure in numeric or integer form.",
           call. = FALSE)
   }
   else if (any(as.logical(unlist(lapply(data[, paste0(exposure, '.', exposure_time_pts)], function(x) {
     inherits(x, "integer") && unique(x) != c(1, 0) } ))))) {
-    stop ("Please make sure your exposure levels are 1s and 0s for integer exposures.",
+    stop("Please make sure your exposure levels are 1s and 0s for integer exposures.",
           call. = FALSE)
   }
   
@@ -330,7 +324,7 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   
   if (any(!names(data)[sapply(strsplit(names(data), "\\."), "[", 1) %in% exposure] 
           %in% tv_confounders)) {
-    warning ("All measured time-varying exposure variables should be included as time-varying confounders.",
+    warning("All measured time-varying exposure variables should be included as time-varying confounders.",
              call. = FALSE)
   }
   
@@ -341,7 +335,7 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
       any(!names(data)[sapply(strsplit(names(data), "\\."), "[", 1) %in% 
                        sapply(strsplit(outcome, "\\."), "[", 1)] 
           %in% tv_confounders)) {
-    warning ("All measured time-varying outcome variables at times earlier than the final outcome time point should be included as time-varying confounders.",
+    warning("All measured time-varying outcome variables at times earlier than the final outcome time point should be included as time-varying confounders.",
              call. = FALSE)
   }
   
@@ -353,7 +347,7 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
        any(!sapply(strsplit(tv_confounders, "\\."), "[", 2) %in% 
            sapply(strsplit(names(data)[sapply(strsplit(names(data), "\\."), "[", 1) 
                                        %in% exposure], "\\."), "[", 2))) {
-    stop ("The time points at which time-varying confounders are measured must be equal to or a subset of the time points at which exposure is measured in the data.",
+    stop("The time points at which time-varying confounders are measured must be equal to or a subset of the time points at which exposure is measured in the data.",
           call. = FALSE)
   }
   
@@ -365,13 +359,13 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   
   
   if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)) {
-    stop (paste(tv_confounders[!tv_confounders %in% potential_covariates]),
+    stop(paste(tv_confounders[!tv_confounders %in% potential_covariates]),
           " time-varying confounders are not present in the dataset.", 
           call. = FALSE)
   }
   
   if (any(duplicated(tv_confounders))) {
-    stop (sprintf("The following time-varying confounders are duplicated: %s.",
+    stop(sprintf("The following time-varying confounders are duplicated: %s.",
                   paste(tv_confounders[duplicated(tv_confounders)], 
                         collapse = ", ")),
           call. = FALSE)
@@ -379,13 +373,13 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   
   
   if (sum(ti_confounders %in% potential_covariates) != length(ti_confounders)) {
-    stop (paste(ti_confounders[!ti_confounders %in% potential_covariates]),
+    stop(paste(ti_confounders[!ti_confounders %in% potential_covariates]),
           " time invariant confounders are not present in the dataset.", 
           call. = FALSE)
   }
   
   if (any(duplicated(ti_confounders))) {
-    stop (sprintf("The following time invariant confounders are duplicated: %s.",
+    stop(sprintf("The following time invariant confounders are duplicated: %s.",
                   paste(ti_confounders[duplicated(ti_confounders)], 
                         collapse = ", ")),
           call. = FALSE)
@@ -404,7 +398,7 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   
   if (sum(is.na(covar_table$time_pt)) > nrow(covar_table)) {
     covar_table <- aggregate(variable ~ time_pt, data = covar_table,
-                             FUN = function (x) variable = toString(x))
+                             FUN = function(x) variable = toString(x))
   }
   
   if (save.out) {
@@ -495,7 +489,7 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
     }
     
     if (sum(sapply(data, is.character)) > 0) {
-      warning (paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", 
+      warnin (paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", 
                             collapse = ", "),
                       " are of class character.", " The package cannot accept character variables."), 
                call. = FALSE)
@@ -546,10 +540,11 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   }
   
   #history examining
-  
-  devMSMs::eval_hist(data = data, exposure, epochs,
-                     exposure_time_pts, hi_lo_cut, ref = reference, 
-                     comps = comparison, verbose)
+  if (verbose) {
+    devMSMs::eval_hist(data = data, exposure = exposure, epochs = epochs,
+                       time_pts = exposure_time_pts, hi_lo_cut = hi_lo_cut, 
+                       ref = reference, comps = comparison)
+  }
   
   
   
@@ -593,11 +588,11 @@ inspectData <- function (data, home_dir, exposure, exposure_time_pts, outcome, t
   else {
     if ( !is.data.frame(epochs) || ncol(epochs) != 2 || 
          sum(colnames(epochs) == c("epochs", "values")) != ncol(epochs)) {
-      stop ("If you supply epochs, please provide a dataframe with two columns of epochs and values.",
+      stop("If you supply epochs, please provide a dataframe with two columns of epochs and values.",
             call. = FALSE)
     }
     if (anyNA(epochs$values)) {
-      stop ("Please provide one or a list of several values for each epoch.", 
+      stop("Please provide one or a list of several values for each epoch.", 
             call. = FALSE)
     }
   }

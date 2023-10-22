@@ -5,7 +5,6 @@
 \title{Formats long data}
 \usage{
 formatLongData(
-  home_dir = NA,
   data,
   exposure,
   exposure_time_pts,
@@ -14,12 +13,11 @@ formatLongData(
   id_var = NA,
   missing = NA,
   factor_confounders = NULL,
+  home_dir = NA,
   save.out = TRUE
 )
 }
 \arguments{
-\item{home_dir}{path to home directory (required if save.out = TRUE)}
-
 \item{data}{dataframe in long format}
 
 \item{exposure}{name of exposure variable}
@@ -37,6 +35,8 @@ created/assessed that correspond to time points when exposure was measured}
 
 \item{factor_confounders}{(optional) list of variable names that are factors
 (default is numeric)}
+
+\item{home_dir}{path to home directory (required if save.out = TRUE)}
 
 \item{save.out}{(optional) TRUE or FALSE indicator to save output and
 intermediary output locally (default is TRUE)}

@@ -2,7 +2,6 @@
 #' processing to speed up
 #'
 #' @export
-#' @importFrom doRNG %dorng%
 #' @import ranger
 #' @seealso {[mice::mice()],
 #'   <https://cran.r-project.org/web/packages/mice/index.html>}
@@ -18,8 +17,8 @@
 #'   using multiple cores to speed up process (default = TRUE)
 #' @param save.out (optional) TRUE or FALSE indicator to save output and
 #'   intermediary output locally (default is TRUE)
-#' @param read_imps_from_file (optional) "yes" or "no" indicatorto read in weights
-#'   that have been previously run and saved locally (default is "no")
+#' @param read_imps_from_file (optional) TRUE or FALSE indicator to read in weights
+#'   that have been previously run and saved locally (default is FALSE)
 #' @param ... any argument used by mice::mice()
 #' @return mice object of m imputed datasets
 #' @examples
@@ -33,7 +32,7 @@
 #'                    C = rnorm(n = 50),
 #'                    D.3 = rnorm(n = 50))
 #' test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
-#'
+#' @examplesIf requireNamespace("missMethods", quietly = TRUE)
 #' t_m <- missMethods::delete_MAR_1_to_x(as.data.frame(test), p = 0.20,
 #'                                             cols_mis = c("A.1", "B.2", "C"),
 #'                                             cols_ctrl = c("B.1", "B.1", "B.1"), 3)
@@ -48,64 +47,64 @@
 #'                 exposure = "A",
 #'                 outcome = "D.3",
 #'                 para_proc = TRUE,
-#'                 read_imps_from_file = "no",
+#'                 read_imps_from_file = "FALSE",
 #'                 save.out = FALSE)
 
-imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outcome, maxit = NA, para_proc = TRUE,
-                       read_imps_from_file = "no", save.out = TRUE, ...) {
+imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA, para_proc = TRUE,
+                       home_dir = NA, read_imps_from_file = FALSE, save.out = TRUE, ...) {
   
-  if (save.out | read_imps_from_file == "yes") {
+  if (save.out || read_imps_from_file) {
     if (missing(home_dir)) {
-      stop ("Please supply a home directory.", 
+      stop("Please supply a home directory.", 
             call. = FALSE)
     }
     else if (!is.character(home_dir)) {
-      stop ("Please provide a valid home directory path as a string if you wish to save output locally.", 
+      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
             call. = FALSE)
     }
     else if (!dir.exists(home_dir)) {
-      stop ('Please provide a valid home directory.', 
+      stop('Please provide a valid home directory.', 
             call. = FALSE)
     }
   }
   
   if (missing(data)) {
-    stop ("Please supply data as a data frame in wide format.",
+    stop("Please supply data as a data frame in wide format.",
           call. = FALSE)
   }
   else if (!is.data.frame(data)) {
-    stop ("Please supply data as a data frame in wide format.",
+    stop("Please supply data as a data frame in wide format.",
           call. = FALSE)
   }
   
   if (missing(exposure)) {
-    stop ("Please supply a single exposure.", 
+    stop("Please supply a single exposure.", 
           call. = FALSE)
   }
   else if (!is.character(exposure) || length(exposure) != 1) {
-    stop ("Please supply a single exposure as a character.", 
+    stop("Please supply a single exposure as a character.", 
           call. = FALSE)
   }
   else if (grepl("\\.", exposure)) {
-    stop ("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
+    stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
           call. = FALSE)
   }
   
   if (missing(outcome)) {
-    stop ("Please supply a single outcome.", 
+    stop("Please supply a single outcome.", 
           call. = FALSE)
   }
   else if (!is.character(outcome) || length(outcome) != 1) {
-    stop ("Please supply a single outcome as a character.", 
+    stop("Please supply a single outcome as a character.", 
           call. = FALSE)
   }
   else if (!grepl("\\.", outcome)) {
-    stop ("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
+    stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
           call. = FALSE)
   }
   
   if ((!is.character(method) && !is.na(method)) || length(method) != 1) {
-    stop ("Please provide as a character a valid imputation method abbreviation.", 
+    stop("Please provide as a character a valid imputation method abbreviation.", 
           call. = FALSE)
   }
   if (is.na(method)) {
@@ -113,7 +112,7 @@ imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outco
   }
   
   if ((!is.numeric(m) && !is.na(m)) || length(m) != 1) {
-    stop ("Please provide a single integer value number of imputations.", 
+    stop("Please provide a single integer value number of imputations.", 
           call. = FALSE)
   }
   if (is.na(m)) {
@@ -121,23 +120,44 @@ imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outco
   }
   
   if ((!is.numeric(maxit) && !is.na(maxit)) || length(maxit) != 1) {
-    stop ("Please a single integer value for the maximum iterations.",
+    stop("Please a single integer value for the maximum iterations.",
           call. = FALSE)
   }
   else if (is.na(maxit)) {
     maxit <- 5
   }
   
+  if (!is.logical(para_proc)) {
+    stop("Please set save.out to either TRUE or FALSE.", 
+         call. = FALSE)
+  }
+  else if (length(para_proc) != 1) {
+    stop("Please provide a single TRUE or FALSE value to save.out.", 
+         call. = FALSE)
+  }
+  if (para_proc) {
+    rlang::check_installed(c("doParallel", "foreach", "doRNG"))
+  }
+  
+  if (!is.logical(read_imps_from_file)) {
+    stop("Please set save.out to either TRUE or FALSE.", 
+         call. = FALSE)
+  }
+  else if (length(read_imps_from_file) != 1) {
+    stop("Please provide a single TRUE or FALSE value to save.out.", 
+         call. = FALSE)
+  }
+  
   if (!is.logical(save.out)) {
-    stop ("Please set save.out to either TRUE or FALSE.", 
+    stop("Please set save.out to either TRUE or FALSE.", 
           call. = FALSE)
   }
   else if (length(save.out) != 1) {
-    stop ("Please provide a single TRUE or FALSE value to save.out.", 
+    stop("Please provide a single TRUE or FALSE value to save.out.", 
           call. = FALSE)
   }
   
-  if (save.out | read_imps_from_file == "yes") {
+  if (save.out || read_imps_from_file) {
     imp_dir <- file.path(home_dir, "imputations")
     if (!dir.exists(imp_dir)) {
       dir.create(imp_dir)
@@ -145,14 +165,14 @@ imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outco
   }
   
   
-  if (read_imps_from_file == "yes") {
+  if (read_imps_from_file ) {
     imputed_datasets <- list()
     
     if (!file.exists(file.path(home_dir, "imputations", 
                                sprintf("%s-%s_all_imp.rds",
                                        exposure, outcome)))) {
       
-      stop ("Imputations have not been created and saved locally. Please set 'read_imps_from_file' == 'no' and re-run.", 
+      stop("Imputations have not been created and saved locally. Please set 'read_imps_from_file' == 'FALSE' and re-run.", 
             call. = FALSE)
     }
     
@@ -162,18 +182,18 @@ imputeData <- function(data, m = NA, method = NA, home_dir = NA, exposure, outco
                                      exposure, outcome)))
     
     if (!mice::is.mids(imp)) {
-      stop ("The locally saved file is not a single mids object. If you have .csv files of data imputed using another program, please read them in as a list.",
+      stop("The locally saved file is not a single mids object. If you have .csv files of data imputed using another program, please read them in as a list.",
             call. = FALSE)
     }
     
     if (imp$m != m) {
-      stop (sprintf("The locally saved imputed data were imputed %s times, contrary to the m value you supplied.",
+      stop(sprintf("The locally saved imputed data were imputed %s times, contrary to the m value you supplied.",
                    imp$m),
            call. = FALSE)
     }
     
     if (!method %in% imp$method) {
-      warning (sprintf("The locally saved imputed data were imputed using the %s method, contrary to what you supplied you supplied.",
+      warning(sprintf("The locally saved imputed data were imputed using the %s method, contrary to what you supplied you supplied.",
                    imp$method[3]),
            call. = FALSE)
     }
