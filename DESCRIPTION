@@ -29,13 +29,15 @@ Imports:
     kableExtra,
     ggplot2,
     ggcorrplot,
-    ranger,
     tibble,
-    rlang
+    rlang,
+    utils,
+    ranger,
+    stats,
+    doRNG
 Suggests:
     missMethods,
     doParallel,
     foreach,
-    doRNG
 Remotes: 
     gitHub::istallworthy/devMSMs
