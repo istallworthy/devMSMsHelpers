@@ -1,6 +1,5 @@
 
 #' Formats long data
-
 #' @param home_dir path to home directory (required if save.out = TRUE)
 #' @param data dataframe in long format
 #' @param exposure name of exposure variable
@@ -45,7 +44,7 @@
 #'                                    save.out = FALSE)
 
 
-formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA,
+formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA, 
                            factor_confounders = NULL, home_dir = NA, save.out = TRUE) {
   
   if (save.out) {
@@ -91,7 +90,7 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   }
   else if (grepl("\\.", exposure)) {
     stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
-          call. = FALSE)
+         call. = FALSE)
   }
   
   if (missing(exposure_time_pts)) {
@@ -104,28 +103,36 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   }
   else if (!length(exposure_time_pts) > 1) {
     stop("Please supply at least two exposure time points.",
-          call. = FALSE)
+         call. = FALSE)
   }
   
   if (missing(outcome)) {
     stop("Please supply a single outcome.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (!is.character(outcome) || length(outcome) != 1) {
     stop("Please supply a single outcome as a character.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (!grepl("\\.", outcome)) {
     stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) != 
            exposure_time_pts[length(exposure_time_pts)] && 
            !as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) > 
            exposure_time_pts[length(exposure_time_pts)] ) {
     stop("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
-          call. = FALSE)
+         call. = FALSE)
   }
+  
+  if (!is.null(factor_confounders)) {
+    if (!is.character(factor_confounders)) {
+      stop("Please supply a list of character strings of confounders to make factors.",
+           call. = FALSE)
+    }
+  }
+  
   
   if (!is.logical(save.out)) {
     stop("Please set save.out to either TRUE or FALSE.", 
@@ -163,7 +170,8 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
                                                  colnames(exposure_summary)))]
   exp_names <- exp_names[!exp_names %in% "WAVE"]
   
-  exposure_summary <- aggregate(as.formula(paste(exp_names, "WAVE", sep = " ~ ")), 
+  exposure_summary <- stats::aggregate(stats::as.formula(paste(exp_names, 
+                                                               "WAVE", sep = " ~ ")), 
                                 data = exposure_summary,
                                 FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
   exposure_summary <- do.call(data.frame, exposure_summary)
@@ -194,12 +202,15 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   
   outcome_summary <- data #as.data.frame(data[, colnames(data)[colnames(data) %in% sapply(strsplit(outcome, "\\."),"[", 1)]])
   out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), 
-                                               colnames(outcome_summary)))]
+                                                colnames(outcome_summary)))]
   out_names <- out_names[!out_names %in% "WAVE"]
   
   outcome_summary <- aggregate(as.formula(paste(out_names, "WAVE", sep = " ~ ")), 
                                data = outcome_summary,
-                               FUN = function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE), min(x, na.rm = TRUE), max(x, na.rm = TRUE)))
+                               FUN = function(x) c(mean(x, na.rm = TRUE), 
+                                                   sd(x, na.rm = TRUE), 
+                                                   min(x, na.rm = TRUE), 
+                                                   max(x, na.rm = TRUE)))
   outcome_summary <- do.call(data.frame, outcome_summary)
   colnames(outcome_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
@@ -225,12 +236,14 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   
   data$ID <- as.numeric(data$ID)
   
+  
+  
+  
   if (!is.null(factor_confounders)) {
-    if (sum(factor_confounders %in% colnames(data)) < length(factor_confounders)) {
+    if (!all(factor_confounders %in% colnames(data))) {
       stop ('Please provide factor covariates that correspond to columns in your data.',
-           call. = FALSE)
+            call. = FALSE)
     }
-    
     # Formatting factor covariates
     
     data[, factor_confounders] <- as.data.frame(lapply(data[, factor_confounders], 

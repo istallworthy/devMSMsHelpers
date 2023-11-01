@@ -219,9 +219,9 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     
     imp_method <- method
     data_to_impute <- tibble::tibble(data)
+    i <- NULL #to avoid note in check()
     
-    cat(sprintf("Creating %s imputed datasets using the %s imputation method in mice::mice().
-                This may take some time to run. \n",
+    cat(sprintf("Creating %s imputed datasets using the %s imputation method in mice::mice(). This may take some time to run. \n",
                 m, imp_method))
     cat("\n")
     
@@ -282,10 +282,16 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
       
       for (k in seq_len(m)) {
         
-        write.csv(mice::complete(imputed_datasets, k),
-                  file = file.path(home_dir, "imputations", 
-                                   sprintf("%s-%s_imp%s.csv", 
-                                           exposure, outcome, k)))
+        # write.csv(mice::complete(imputed_datasets, k),
+        #           file = file.path(home_dir, "imputations", 
+        #                            sprintf("%s-%s_imp%s.csv", 
+        #                                    exposure, outcome, k)))
+        
+        csv_file <- file.path(home_dir, "imputations", 
+                              sprintf("%s-%s_imp%s.csv", 
+                                      exposure, outcome, k))
+        
+        utils::write.table(mice::complete(imputed_datasets, k), file = csv_file)
       }
       cat("See the 'imputations/' folder for a .csv file of each imputed dataset and an .rds file of all imputed datasets", "\n")
     }

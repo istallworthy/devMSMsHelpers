@@ -17,9 +17,9 @@ Authors@R: c(person("Isabella", "Stallworthy",
             email = "dberry@umn.edu",
             role = c("aut")))
 Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+License:  GPL-3
 Encoding: UTF-8
+LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports:
@@ -29,7 +29,6 @@ Imports:
     kableExtra,
     ggplot2,
     ggcorrplot,
-    tibble,
     rlang,
     utils,
     ranger,
@@ -38,6 +37,6 @@ Imports:
 Suggests:
     missMethods,
     doParallel,
-    foreach,
+    foreach
 Remotes: 
     gitHub::istallworthy/devMSMs
