@@ -457,7 +457,7 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
                           sprintf("%s-%s_covariates_considered_by_time_pt.csv",
                                   exposure, outcome))
     
-    utils::write.table(covar_table, file = csv_file)
+    utils::write.csv(covar_table, file = csv_file)
   }
   
   
@@ -567,7 +567,7 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
                           sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt.csv",
                                   exposure, outcome))
     
-    utils::write.table(test, file = csv_file)
+    utils::write.csv(test, file = csv_file)
     
     if (verbose) {
       print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.")
