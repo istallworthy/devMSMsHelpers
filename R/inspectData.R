@@ -188,6 +188,24 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
          call. = FALSE)
   }
   
+  if(!is.null(epochs)){
+    if ( !is.data.frame(epochs) || ncol(epochs) != 2 || 
+         !all(colnames(epochs) == c("epochs", "values"))) {
+      stop("If you supply epochs, please provide a dataframe with two columns of epochs and values.",
+           call. = FALSE)
+    }
+    if (anyNA(epochs$values)) {
+      stop("Please provide one or a list of several numeric time values for each epoch.",
+           call. = FALSE)
+    }
+    if (!is.numeric(unlist(epochs$values)) || 
+        any(!as.numeric(unlist(epochs$values)) %in% exposure_time_pts)) {
+      stop("Please supply epochs with numeric values that are included in the exposure time points.",
+           call. = FALSE)
+    }
+    
+  }
+  
   if (!is.logical(verbose)) {
     stop("Please set verbose to either TRUE or FALSE.", 
          call. = FALSE)
@@ -439,10 +457,9 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
                                                       "\\."), "[", 2))
   if (!is.null(tv_ints)){
     covar_table <- rbind(covar_table,
-                         do.call(rbind.data.frame, lapply(tv_ints, function(x){
+                         do.call(rbind.data.frame, lapply(tv_ints, function(x) {
                            data.frame(variable = x,
-                                      time_pt = sub('.*\\.', '', x))
-                         })))
+                                      time_pt = sub('.*\\.', '', x)) })))
   }
   
   covar_table <- covar_table[order(covar_table$time_pt, covar_table$variable), ]
@@ -474,9 +491,11 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
     
     for (x in seq_len(length(ints))) {
       vars <- as.character(unlist(strsplit(ints[x], "\\:")))
+      num_comp <- length(vars)
+      
       f_vars <- vars[vars %in% factor_covariates]
       
-      ints2 <- utils::combn(vars, 2)
+      ints2 <- utils::combn(vars, num_comp)
       ints2 <- as.data.frame(ints2[, sapply(strsplit(ints2[1, ], "\\_"), "[", 1) != 
                                      sapply(strsplit(ints2[2, ], "\\_"), "[", 1)])
       ints2 <- unlist(lapply(1:ncol(ints2), 
@@ -556,12 +575,6 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
   test[seq_len(nrow(test)), ncol(test) + 1] <- NumVars
   
   if (save.out) {
-    # write.csv(test, 
-    #           file.path(home_dir,  
-    #                     sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt.csv",
-    #                             exposure, outcome)),
-    #           row.names = TRUE)
-    
     
     csv_file <- file.path(home_dir,  
                           sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt.csv",
@@ -627,6 +640,7 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
   #covariate correlations
   
   covariates_to_include <- c(all_potential_covariates, tv_ints)
+  
   
   # Creates final dataset with only relevant variables
   
