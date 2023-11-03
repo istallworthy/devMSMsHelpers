@@ -291,7 +291,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
                               sprintf("%s-%s_imp%s.csv", 
                                       exposure, outcome, k))
         
-        utils::write.table(mice::complete(imputed_datasets, k), file = csv_file)
+        utils::write.csv(mice::complete(imputed_datasets, k), file = csv_file)
       }
       cat("See the 'imputations/' folder for a .csv file of each imputed dataset and an .rds file of all imputed datasets", "\n")
     }
