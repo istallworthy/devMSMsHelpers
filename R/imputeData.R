@@ -224,14 +224,26 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     }
     
     imp_method <- method
+    
+    row.names(data) <- NULL
+    data <- data[order(names(data))]
+    
     data_to_impute <- tibble::tibble(data)
     i <- NULL #to avoid note in check()
     
+    if (!is.na(seed)) {
+      set.seed(seed)
+    }
+
     cat(sprintf("Creating %s imputed datasets using the %s imputation method in mice::mice(). This may take some time to run. \n",
                 m, imp_method))
     cat("\n")
     
     if (para_proc) {
+      # if (!is.na(seed)) {
+      #   set.seed(seed)
+      # }
+      
       # Configure parallelization
       # nCores <- min(parallel::detectCores(), 8)
       nCores <- 2 #apparently CRAN limits number of cores available to 2
@@ -244,11 +256,8 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
       
       # Conducts imputations using parallelized execution cycling through m
       imputed_datasets <- foreach::foreach(i = seq_len(m), .combine = mice::ibind) %dorng% {
-        
-        if (!is.na(seed)) {
-          set.seed(seed)
-        }
-        
+  
+      
         cat("### Started iteration", i, "\n")
         
         miceout <- mice::mice(data_to_impute, 
@@ -256,7 +265,6 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
                               method = imp_method,
                               maxit = maxit, 
                               print = F,
-                              seed = seed, 
                               ...)
         cat("### Completed iteration", i, "\n")
         miceout
@@ -264,6 +272,10 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     }
     else {
       
+      # if (!is.na(seed)) {
+      #   set.seed(seed)
+      # }
+
       imputed_datasets <- mice::mice(data_to_impute, 
                                      m = m, 
                                      method = imp_method, 
@@ -271,6 +283,11 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
                                      print = F,
                                      seed = seed,
                                      ...)
+      summary(mice::complete(imputed_datasets, 1))
+    }
+    
+    if (!is.na(seed)) {
+      set.seed(seed)
     }
     
     if (save.out) {
