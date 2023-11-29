@@ -15,6 +15,7 @@
 #' @param maxit (optional) maximum number of iterations in mice (default is 5)
 #' @param para_proc (optional) TRUE/FALSE whether to do parallel processing
 #'   using multiple cores to speed up process (default = TRUE)
+#' @param seed (optional) integer to set seed for reproducibility (default is NA)
 #' @param save.out (optional) TRUE or FALSE indicator to save output and
 #'   intermediary output locally (default is TRUE)
 #' @param read_imps_from_file (optional) TRUE or FALSE indicator to read in weights
@@ -50,62 +51,62 @@
 #'                 read_imps_from_file = FALSE,
 #'                 save.out = FALSE)
 
-imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA, para_proc = TRUE,
+imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA, para_proc = TRUE, seed = NA,
                        home_dir = NA, read_imps_from_file = FALSE, save.out = TRUE, ...) {
   
   if (save.out || read_imps_from_file) {
     if (missing(home_dir)) {
       stop("Please supply a home directory.", 
-            call. = FALSE)
+           call. = FALSE)
     }
     else if (!is.character(home_dir)) {
       stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
-            call. = FALSE)
+           call. = FALSE)
     }
     else if (!dir.exists(home_dir)) {
       stop('Please provide a valid home directory.', 
-            call. = FALSE)
+           call. = FALSE)
     }
   }
   
   if (missing(data)) {
     stop("Please supply data as a data frame in wide format.",
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (!is.data.frame(data)) {
     stop("Please supply data as a data frame in wide format.",
-          call. = FALSE)
+         call. = FALSE)
   }
   
   if (missing(exposure)) {
     stop("Please supply a single exposure.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (!is.character(exposure) || length(exposure) != 1) {
     stop("Please supply a single exposure as a character.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (grepl("\\.", exposure)) {
     stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
-          call. = FALSE)
+         call. = FALSE)
   }
   
   if (missing(outcome)) {
     stop("Please supply a single outcome.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (!is.character(outcome) || length(outcome) != 1) {
     stop("Please supply a single outcome as a character.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (!grepl("\\.", outcome)) {
     stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
-          call. = FALSE)
+         call. = FALSE)
   }
   
   if ((!is.character(method) && !is.na(method)) || length(method) != 1) {
     stop("Please provide as a character a valid imputation method abbreviation.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   if (is.na(method)) {
     method <- "rf"
@@ -113,7 +114,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
   
   if ((!is.numeric(m) && !is.na(m)) || length(m) != 1) {
     stop("Please provide a single integer value number of imputations.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   if (is.na(m)) {
     m <- 5
@@ -121,7 +122,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
   
   if ((!is.numeric(maxit) && !is.na(maxit)) || length(maxit) != 1) {
     stop("Please a single integer value for the maximum iterations.",
-          call. = FALSE)
+         call. = FALSE)
   }
   else if (is.na(maxit)) {
     maxit <- 5
@@ -131,7 +132,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     stop("Please set save.out to either TRUE or FALSE.", 
          call. = FALSE)
   }
-  else if (length(para_proc) != 1) {
+  if (length(para_proc) != 1) {
     stop("Please provide a single TRUE or FALSE value to save.out.", 
          call. = FALSE)
   }
@@ -139,22 +140,27 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     rlang::check_installed(c("doParallel", "foreach", "doRNG"))
   }
   
+  if (length(seed) != 1) {
+    stop("If you wish to set a seed for reproducibility, please provide a single integer value.",
+         call. = FALSE)
+  }
+  
   if (!is.logical(read_imps_from_file)) {
     stop("Please set save.out to either TRUE or FALSE.", 
          call. = FALSE)
   }
-  else if (length(read_imps_from_file) != 1) {
+  if (length(read_imps_from_file) != 1) {
     stop("Please provide a single TRUE or FALSE value to save.out.", 
          call. = FALSE)
   }
   
   if (!is.logical(save.out)) {
     stop("Please set save.out to either TRUE or FALSE.", 
-          call. = FALSE)
+         call. = FALSE)
   }
-  else if (length(save.out) != 1) {
+  if (length(save.out) != 1) {
     stop("Please provide a single TRUE or FALSE value to save.out.", 
-          call. = FALSE)
+         call. = FALSE)
   }
   
   if (save.out || read_imps_from_file) {
@@ -173,7 +179,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
                                        exposure, outcome)))) {
       
       stop("Imputations have not been created and saved locally. Please set 'read_imps_from_file' == 'FALSE' and re-run.", 
-            call. = FALSE)
+           call. = FALSE)
     }
     
     
@@ -183,7 +189,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     
     if (!mice::is.mids(imp)) {
       stop("The locally saved file is not a single mids object. If you have .csv files of data imputed using another program, please read them in as a list.",
-            call. = FALSE)
+           call. = FALSE)
     }
     
     if (imp$m != m) {
@@ -194,10 +200,10 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     
     if (!method %in% imp$method) {
       warning(sprintf("The locally saved imputed data were imputed using the %s method, contrary to what you supplied you supplied.",
-                   imp$method[3]),
-           call. = FALSE)
+                      imp$method[3]),
+              call. = FALSE)
     }
-      
+    
     
     imputed_datasets <- imp
     
@@ -238,12 +244,19 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
       
       # Conducts imputations using parallelized execution cycling through m
       imputed_datasets <- foreach::foreach(i = seq_len(m), .combine = mice::ibind) %dorng% {
+        
+        if (!is.na(seed)) {
+          set.seed(seed)
+        }
+        
         cat("### Started iteration", i, "\n")
+        
         miceout <- mice::mice(data_to_impute, 
                               m = 1, 
                               method = imp_method,
                               maxit = maxit, 
                               print = F,
+                              seed = seed, 
                               ...)
         cat("### Completed iteration", i, "\n")
         miceout
@@ -256,6 +269,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
                                      method = imp_method, 
                                      maxit = maxit,
                                      print = F,
+                                     seed = seed,
                                      ...)
     }
     
@@ -282,16 +296,13 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
       
       for (k in seq_len(m)) {
         
-        # write.csv(mice::complete(imputed_datasets, k),
-        #           file = file.path(home_dir, "imputations", 
-        #                            sprintf("%s-%s_imp%s.csv", 
-        #                                    exposure, outcome, k)))
         
         csv_file <- file.path(home_dir, "imputations", 
                               sprintf("%s-%s_imp%s.csv", 
                                       exposure, outcome, k))
         
-        utils::write.csv(mice::complete(imputed_datasets, k), file = csv_file)
+        utils::write.csv(mice::complete(imputed_datasets, k), 
+                         file = csv_file)
       }
       cat("See the 'imputations/' folder for a .csv file of each imputed dataset and an .rds file of all imputed datasets", "\n")
     }

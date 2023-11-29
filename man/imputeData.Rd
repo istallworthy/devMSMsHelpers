@@ -13,6 +13,7 @@ imputeData(
   method = NA,
   maxit = NA,
   para_proc = TRUE,
+  seed = NA,
   home_dir = NA,
   read_imps_from_file = FALSE,
   save.out = TRUE,
@@ -35,6 +36,8 @@ imputeData(
 
 \item{para_proc}{(optional) TRUE/FALSE whether to do parallel processing
 using multiple cores to speed up process (default = TRUE)}
+
+\item{seed}{(optional) integer to set seed for reproducibility (default is NA)}
 
 \item{home_dir}{path to home directory (required if save.out = TRUE)}
 

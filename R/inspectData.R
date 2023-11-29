@@ -527,11 +527,6 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
           vars <- as.character(unlist(strsplit(ints2[x], "\\:")))
           if (all(vars %in% factor_covariates)) {
             prods[, 1] <- as.factor(prods[, 1])
-            # prods[, names(prods)[any(as.logical(unlist(lapply(names(prods), 
-            #                                                   function(x) { as.character(unlist(strsplit(x, "\\:"))) %in% f_vars}))))]] <- 
-            #   t(as.data.frame(lapply(prods[, names(prods)[any(as.logical(unlist(lapply(names(prods), 
-            #                                                                            function(x) {as.character(unlist(strsplit(x, "\\:"))) %in% f_vars}))))]], 
-            #                          as.factor)))
           }
         }
       }
@@ -599,7 +594,8 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
     
     message("Please inspect this list carefully. It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point." 
     )
-    print(c(all_potential_covariates, tv_ints)[!(c(all_potential_covariates, tv_ints) %in% c("ID"))])
+    print(c(all_potential_covariates, tv_ints)[!(c(all_potential_covariates, 
+                                                   tv_ints) %in% c("ID"))])
   }
   
   
@@ -660,22 +656,14 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
                                                          margin = ggplot2::margin(-2, 0, 0, 0)),  # Order: top, right, bottom, left
                      axis.text.y = ggplot2::element_text(size = 5, 
                                                          margin = ggplot2::margin(0, -2, 0, 0))) 
-      # ggplot2::geom_vline(xintercept = seq_len(ncol(mtcars)) - 0.5, 
-      #                     colour="white", size = 2) +
-      # ggplot2::geom_hline(yintercept = seq_len(ncol(mtcars)) - 0.5, 
-      #                     colour="white", size = 2)
     
     # Save correlation plot
     ggplot2::ggsave(filename = file.path(home_dir,
                                          sprintf("%s-%s_all_vars_corr_plot.pdf",
                                                  exposure, outcome)))
-    # 
-    # pdf(file = file.path(home_dir,
-    #                      sprintf("%s-%s_all_vars_corr_plot.pdf",
-    #                              exposure, outcome)))
+
     print(ggplot2::last_plot())
-    # dev.off()
-    
+
     if (verbose) {
       cat("\n")
       cat("A correlation plot of all variables in the dataset has been saved in the home directory", "\n")
