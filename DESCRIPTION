@@ -17,7 +17,7 @@ Authors@R: c(person("Isabella", "Stallworthy",
             email = "dberry@umn.edu",
             role = c("aut")))
 Description: What the package does (one paragraph).
-License:  GPL-3
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
@@ -37,6 +37,8 @@ Imports:
 Suggests:
     missMethods,
     doParallel,
-    foreach
+    foreach,
+    rmarkdown
 Remotes: 
     gitHub::istallworthy/devMSMs
+VignetteBuilder: knitr
