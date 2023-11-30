@@ -283,7 +283,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
                                      print = F,
                                      seed = seed,
                                      ...)
-      summary(mice::complete(imputed_datasets, 1))
+      # summary(mice::complete(imputed_datasets, 1))
     }
     
     if (!is.na(seed)) {
