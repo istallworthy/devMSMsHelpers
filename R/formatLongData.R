@@ -9,7 +9,9 @@
 #' @param time_var (optional) variable name in original dataset demarcating time
 #' @param id_var (optional) variable name in original dataset demarcating ID
 #' @param missing (optional) indicator for missing data in original dataset
-#' @param factor_confounders (optional) list of variable names that are factors
+#' @param factor_confounders (optional) list of variable names that should be made into factors
+#'   (default is numeric)
+#' @param integer_confounders (optional) list of variable names that should be made into integers
 #'   (default is numeric)
 #' @param save.out (optional) TRUE or FALSE indicator to save output and
 #'   intermediary output locally (default is TRUE)
@@ -26,7 +28,6 @@
 #'                    B.3 = rnorm(n = 50),
 #'                    C = rnorm(n = 50),
 #'                    D.3 = rnorm(n = 50))
-#' test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
 #'
 #' test_long <- stats::reshape(data = test,
 #'                             idvar = "ID", #'list ID variable
@@ -45,7 +46,7 @@
 
 
 formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA, 
-                           factor_confounders = NULL, home_dir = NA, save.out = TRUE) {
+                           factor_confounders = NULL, integer_confounders = NULL, home_dir = NA, save.out = TRUE) {
   
   if (save.out) {
     if (missing(home_dir)) {
@@ -131,8 +132,22 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
       stop("Please supply a list of character strings of confounders to make factors.",
            call. = FALSE)
     }
+    else if (any(!factor_confounders %in% names(data))) {
+      stop("Please only include factor confounder present in your data.",
+           call. = FALSE)
+    }
   }
   
+  if (!is.null(integer_confounders)) {
+    if (!is.character(integer_confounders)) {
+      stop("Please supply a list of character strings of confounders to make integer.",
+           call. = FALSE)
+    }
+    else if (any(!integer_confounders %in% names(data))) {
+      stop("Please only include integer confounder present in your data.",
+           call. = FALSE)
+    }
+  }
   
   if (!is.logical(save.out)) {
     stop("Please set save.out to either TRUE or FALSE.", 
@@ -147,6 +162,7 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   
   
   # Reading and formatting LONG dataset
+  
   if (!is.na(time_var)) {
     colnames(data)[colnames(data) == time_var] <- "WAVE" # Assigning time variable
   }
@@ -163,6 +179,7 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
     data <- data[, which(colnames(data) == "ID"):ncol(data)]
   }
   
+  
   # Exposure summary
   
   exposure_summary <- data[data$WAVE %in% exposure_time_pts, , drop = FALSE]
@@ -172,8 +189,8 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   
   exposure_summary <- stats::aggregate(stats::as.formula(paste(exp_names, 
                                                                "WAVE", sep = " ~ ")), 
-                                data = exposure_summary,
-                                FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
+                                       data = exposure_summary,
+                                       FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
   exposure_summary <- do.call(data.frame, exposure_summary)
   colnames(exposure_summary) <- c("WAVE", "mean", "sd", "min", "max")
   
@@ -237,23 +254,44 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   data$ID <- as.numeric(data$ID)
   
   
+  numeric_vars <- names(data)
   
+  # Formatting factor covariates
   
   if (!is.null(factor_confounders)) {
     if (!all(factor_confounders %in% colnames(data))) {
       stop ('Please provide factor covariates that correspond to columns in your data.',
             call. = FALSE)
     }
-    # Formatting factor covariates
     
     data[, factor_confounders] <- as.data.frame(lapply(data[, factor_confounders], 
                                                        as.factor))
     
-    # Formatting numeric covariates
+    numeric_vars <- numeric_vars[!numeric_vars %in% c(factor_confounders)]
     
-    numeric_vars <- colnames(data)[!colnames(data) %in% c(factor_confounders)]
-    data[, numeric_vars] <- lapply(data[, numeric_vars], as.numeric)
   }
+  
+  
+  # Formatting integer covariates
+  
+  if (!is.null(integer_confounders)) {
+    if (!all(integer_confounders %in% colnames(data))) {
+      stop ('Please provide integer covariates that correspond to columns in your data.',
+            call. = FALSE)
+    }
+    
+    data[, integer_confounders] <- as.data.frame(lapply(data[, integer_confounders], 
+                                                        as.integer))
+    
+    numeric_vars <- numeric_vars[!numeric_vars %in% c(integer_confounders)]
+    
+  }
+  
+  
+  # Formatting numeric covariates
+  
+  data[, numeric_vars] <- lapply(data[, numeric_vars], as.numeric)
+  
   
   as.data.frame(data)
 }

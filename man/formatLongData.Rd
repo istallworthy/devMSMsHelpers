@@ -13,6 +13,7 @@ formatLongData(
   id_var = NA,
   missing = NA,
   factor_confounders = NULL,
+  integer_confounders = NULL,
   home_dir = NA,
   save.out = TRUE
 )
@@ -33,7 +34,10 @@ created/assessed that correspond to time points when exposure was measured}
 
 \item{missing}{(optional) indicator for missing data in original dataset}
 
-\item{factor_confounders}{(optional) list of variable names that are factors
+\item{factor_confounders}{(optional) list of variable names that should be made into factors
+(default is numeric)}
+
+\item{integer_confounders}{(optional) list of variable names that should be made into integers
 (default is numeric)}
 
 \item{home_dir}{path to home directory (required if save.out = TRUE)}
@@ -57,7 +61,6 @@ test <- data.frame(ID = 1:50,
                    B.3 = rnorm(n = 50),
                    C = rnorm(n = 50),
                    D.3 = rnorm(n = 50))
-test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
 
 test_long <- stats::reshape(data = test,
                             idvar = "ID", #'list ID variable
