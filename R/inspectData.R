@@ -320,6 +320,7 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
   
   
   #identifying tv interactions
+  
   if (any(grepl("\\:", tv_confounders))) {
     tv_ints <- tv_confounders[grepl("\\:", tv_confounders)]
     tv_confounders <- tv_confounders[!grepl("\\:", tv_confounders)]
@@ -539,7 +540,7 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
     }
   }
   
-  
+
   
   unique_vars <- length(unique(c(ti_confounders, 
                                  sapply(strsplit(all_potential_covariates, 
