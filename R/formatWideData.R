@@ -3,9 +3,9 @@
 #' @param home_dir path to home directory (required if save.out = TRUE)
 #' @param data dataframe in wide format
 #' @param exposure name of exposure variable
-#' @param exposure_time_pts list of integers at which weights will be
-#'   created/assessed that correspond to time points when exposure was measured
 #' @param outcome name of outcome variable with ".timepoint" suffix
+#' @param sep (optional) delimiter for time integer; must be in regex format, 
+#'    e.g., "\\." (default is period)
 #' @param id_var (optional) variable name in original dataset demarcating ID
 #' @param missing (optional) indicator for missing data in original dataset
 #' @param factor_confounders (optional) list of variable names that should be made into factors
@@ -29,8 +29,7 @@
 #'                    D.3 = rnorm(n = 50))
 #'
 #' test_wide_format <- formatWideData(data = test,
-#'                                    exposure = "A",
-#'                                    exposure_time_pts = c(1, 2, 3),
+#'                                    exposure = c("A.1", "A.2", "A.3"),
 #'                                    outcome = "D.3",
 #'                                    id_var = NA,
 #'                                    missing = NA,
@@ -39,8 +38,9 @@
 #'                                    save.out = FALSE)
 
 
-formatWideData <- function(data, exposure, exposure_time_pts, outcome, id_var = NA, missing = NA, 
-                           factor_confounders = NULL, integer_confounders = NULL, home_dir = NA, save.out = TRUE) {
+formatWideData <- function(data, exposure, outcome, sep = "\\.", id_var = NA, missing = NA, 
+                           factor_confounders = NULL, integer_confounders = NULL, 
+                           home_dir = NA, save.out = TRUE) {
   
   if (save.out) {
     if (missing(home_dir)) {
@@ -87,27 +87,17 @@ formatWideData <- function(data, exposure, exposure_time_pts, outcome, id_var = 
     stop("Please supply a single exposure.", 
          call. = FALSE)
   } 
-  else if (!is.character(exposure) || length(exposure) != 1) {
+  else if (!is.character(exposure)) {
     stop("Please supply a single exposure as a character.", 
          call. = FALSE)
   }
-  else if (grepl("\\.", exposure)) {
-    stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
+  else if (sum(unlist(lapply(exposure, 
+                             function(x){grepl(sep, x)}))) != length(exposure)) {
+    stop("Please supply exposures variables with time suffixes. You can specify a delimiiter in 'sep'.",
          call. = FALSE)
   }
   
-  if (missing(exposure_time_pts)) {
-    stop("Please supply the exposure time points at which you wish to create weights.", 
-         call. = FALSE)
-  }
-  else if (!is.numeric(exposure_time_pts)) {
-    stop("Please supply a list of exposure time points as integers.", 
-         call. = FALSE)
-  }
-  else if (!length(exposure_time_pts) > 1) {
-    stop("Please supply at least two exposure time points.",
-         call. = FALSE)
-  }
+
   
   if (missing(outcome)) {
     stop("Please supply a single outcome.", 
@@ -117,17 +107,11 @@ formatWideData <- function(data, exposure, exposure_time_pts, outcome, id_var = 
     stop("Please supply a single outcome as a character.", 
          call. = FALSE)
   }
-  else if (!grepl("\\.", outcome)) {
+  else if (!grepl(sep, outcome)) {
     stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
          call. = FALSE)
   }
-  else if (as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) != 
-           exposure_time_pts[length(exposure_time_pts)] && 
-           !as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) > 
-           exposure_time_pts[length(exposure_time_pts)] ) {
-    stop("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
-         call. = FALSE)
-  }
+
   
   if (!is.null(factor_confounders)) {
     if (!is.character(factor_confounders)) {
@@ -162,6 +146,12 @@ formatWideData <- function(data, exposure, exposure_time_pts, outcome, id_var = 
   
   #options(readr.num_columns = 0)
   
+  exposure_time_pts <- .extract_time_pts_from_vars(exposure, sep = sep)
+  if (any(is.na(exposure_time_pts))) {
+    stop("Please supply exposure variables with a '.time' suffix with the outcome time point", call. = FALSE)
+  }
+  
+  
   
   # Reading and formatting wide dataset
   
@@ -180,28 +170,28 @@ formatWideData <- function(data, exposure, exposure_time_pts, outcome, id_var = 
   
   # Exposure summary
   
-  exp_names <- colnames(data)[(grepl(exposure, colnames(data)))]
+  exp_names <- exposure
   exposure_summary <- data[, exp_names]
   exposure_summary <- summary(exposure_summary)
-  
+  exp_long <- sapply(strsplit(exposure[1], sep), head, 1)
   
   if (save.out) {
     k <- knitr::kable(exposure_summary, 
                       caption = sprintf("Summary of %s Exposure Information",
-                                        exposure),
+                                        exp_long),
                       format = 'html') 
     kableExtra::save_kable(k, 
                            file = file.path(home_dir, 
                                             sprintf("%s_exposure_info.html",
-                                                    exposure)))
+                                                    exp_long)))
     cat(knitr::kable(exposure_summary, 
-                     caption = paste0("Summary of ", exposure, 
+                     caption = paste0("Summary of ", exp_long, 
                                       " Exposure Information"),
                      format = 'pipe'), sep = "\n")
     cat("\n")
     
     cat(sprintf("%s exposure descriptive statistics have now been saved in the home directory. \n",
-                exposure))
+                exp_long))
     cat("\n")
     
   }
@@ -211,7 +201,7 @@ formatWideData <- function(data, exposure, exposure_time_pts, outcome, id_var = 
   #
   # Outcome summary
   
-  out_names <- colnames(data)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), 
+  out_names <- colnames(data)[(grepl(sapply(strsplit(outcome, sep), head, 1), 
                                      colnames(data)))]
   outcome_summary <- data[, out_names]
   
@@ -225,25 +215,25 @@ formatWideData <- function(data, exposure, exposure_time_pts, outcome, id_var = 
   if (save.out) {
     k <-  knitr::kable(outcome_summary, 
                        caption = paste0("Summary of Outcome ",
-                                        sapply(strsplit(outcome, "\\."), "[", 1), 
+                                        sapply(strsplit(outcome, sep), head, 1), 
                                         " Information"), 
                        format = 'html') 
     kableExtra::save_kable(k, 
                            file = file.path(home_dir, 
                                             sprintf("%s_outcome_info.html", 
                                                     sapply(strsplit(outcome, 
-                                                                    "\\."), "[", 1))))
+                                                                    sep), head, 1))))
     
     
     cat(knitr::kable(outcome_summary, 
                      caption = paste0("Summary of Outcome ",
-                                      sapply(strsplit(outcome, "\\."), "[", 1), 
+                                      sapply(strsplit(outcome, sep), head, 1), 
                                       " Information"),
                      format = 'pipe'), 
         sep = "\n")
     
     cat(sprintf("%s outcome descriptive statistics have now been saved in the home directory. \n",
-                sapply(strsplit(outcome, "\\."), "[", 1)))
+                sapply(strsplit(outcome, sep), head, 1)))
     
   }
   

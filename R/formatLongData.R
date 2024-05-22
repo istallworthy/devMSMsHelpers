@@ -3,9 +3,9 @@
 #' @param home_dir path to home directory (required if save.out = TRUE)
 #' @param data dataframe in long format
 #' @param exposure name of exposure variable
-#' @param exposure_time_pts list of integers at which weights will be
-#'   created/assessed that correspond to time points when exposure was measured
 #' @param outcome name of outcome variable with ".timepoint" suffix
+#' @param sep (optional) delimiter for time integer; must be in regex format, 
+#'    e.g., "\\." (default is period)
 #' @param time_var (optional) variable name in original dataset demarcating time
 #' @param id_var (optional) variable name in original dataset demarcating ID
 #' @param missing (optional) indicator for missing data in original dataset
@@ -30,13 +30,12 @@
 #'                    D.3 = rnorm(n = 50))
 #'
 #' test_long <- stats::reshape(data = test,
-#'                             idvar = "ID", #'list ID variable
+#'                             idvar = "ID", 
 #'                             varying = c("A.1", "A.2", "A.3", "B.1", "B.2", "B.3"),
 #'                             direction = "long")
 #'
 #' test_long_format <- formatLongData(data = test_long,
-#'                                    exposure = "A",
-#'                                    exposure_time_pts = c(1, 2, 3),
+#'                                    exposure = c("A.1", "A.2", "A.3),
 #'                                    outcome = "D.3",
 #'                                    time_var = "time",
 #'                                    id_var = NA,
@@ -45,7 +44,7 @@
 #'                                    save.out = FALSE)
 
 
-formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var = NA, id_var = NA, missing = NA, 
+formatLongData <- function(data, exposure, outcome, sep = "\\.", time_var = NA, id_var = NA, missing = NA, 
                            factor_confounders = NULL, integer_confounders = NULL, home_dir = NA, save.out = TRUE) {
   
   if (save.out) {
@@ -85,25 +84,12 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
     stop("Please supply a single exposure.", 
          call. = FALSE)
   } 
-  else if (!is.character(exposure) || length(exposure) != 1) {
-    stop("Please supply a single exposure as a character.", 
+  else if (!is.character(exposure)) {
+    stop("Please supply a exposure as a list of characters.", 
          call. = FALSE)
   }
-  else if (grepl("\\.", exposure)) {
-    stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
-         call. = FALSE)
-  }
-  
-  if (missing(exposure_time_pts)) {
-    stop("Please supply the exposure time points at which you wish to create weights.", 
-         call. = FALSE)
-  }
-  else if (!is.numeric(exposure_time_pts)) {
-    stop("Please supply a list of exposure time points as integers.", 
-         call. = FALSE)
-  }
-  else if (!length(exposure_time_pts) > 1) {
-    stop("Please supply at least two exposure time points.",
+  else if (sum(unlist(lapply(exposure, function(x){grepl(sep, x)}))) != length(exposure)) {
+    stop("Please supply exposures variables with time suffixes. You can specify a delimiiter in 'sep'.",
          call. = FALSE)
   }
   
@@ -115,15 +101,8 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
     stop("Please supply a single outcome as a character.", 
          call. = FALSE)
   }
-  else if (!grepl("\\.", outcome)) {
-    stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
-         call. = FALSE)
-  }
-  else if (as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) != 
-           exposure_time_pts[length(exposure_time_pts)] && 
-           !as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) > 
-           exposure_time_pts[length(exposure_time_pts)] ) {
-    stop("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
+  else if (!grepl(sep, outcome)) {
+    stop("Please supply an outcome variable with a time suffix with the outcome time point such that it matches the variable name in your wide data",
          call. = FALSE)
   }
   
@@ -158,7 +137,10 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
          call. = FALSE)
   }
   
-  #options(readr.num_columns = 0)
+  exposure_time_pts <- .extract_time_pts_from_vars(exposure, sep = sep)
+  if (any(is.na(exposure_time_pts))) {
+    stop("Please supply exposure variables with a '.time' suffix with the outcome time point", call. = FALSE)
+  }
   
   
   # Reading and formatting LONG dataset
@@ -183,9 +165,7 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   # Exposure summary
   
   exposure_summary <- data[data$WAVE %in% exposure_time_pts, , drop = FALSE]
-  exp_names <- colnames(exposure_summary)[(grepl(exposure, 
-                                                 colnames(exposure_summary)))]
-  exp_names <- exp_names[!exp_names %in% "WAVE"]
+  exp_names <- sapply(strsplit(exposure[1], sep), head, 1)
   
   exposure_summary <- stats::aggregate(stats::as.formula(paste(exp_names, 
                                                                "WAVE", sep = " ~ ")), 
@@ -196,7 +176,7 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   
   cat(knitr::kable(exposure_summary, 
                    caption = sprintf("Summary of %s Exposure Information", 
-                                     exposure),
+                                     exp_names),
                    format = 'pipe'), sep = "\n")
   cat("\n")
   
@@ -207,9 +187,9 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
                        format = 'html')
     
     kableExtra::save_kable(k, 
-                           file = file.path(home_dir, paste0(exposure, 
+                           file = file.path(home_dir, paste0(exp_names, 
                                                              "_exposure_info.html")))
-    cat(paste0(exposure, 
+    cat(paste0(exp_names, 
                " exposure descriptive statistics have now been saved in the home directory"), "\n")
     cat("\n")
   }
@@ -218,7 +198,7 @@ formatLongData <- function(data, exposure, exposure_time_pts, outcome, time_var 
   # Outcome summary
   
   outcome_summary <- data #as.data.frame(data[, colnames(data)[colnames(data) %in% sapply(strsplit(outcome, "\\."),"[", 1)]])
-  out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), 
+  out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, sep),"[", 1), 
                                                 colnames(outcome_summary)))]
   out_names <- out_names[!out_names %in% "WAVE"]
   

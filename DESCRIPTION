@@ -41,4 +41,6 @@ Suggests:
     rmarkdown
 Remotes: 
     gitHub::istallworthy/devMSMs
+Import:	
+    devMSMs
 VignetteBuilder: knitr
