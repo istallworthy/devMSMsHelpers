@@ -51,7 +51,7 @@
 #'                 read_imps_from_file = FALSE,
 #'                 save.out = FALSE)
 
-imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA, para_proc = TRUE, seed = NA,
+imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA, maxit = NA, para_proc = TRUE, seed = NA,
                        home_dir = NA, read_imps_from_file = FALSE, save.out = TRUE, ...) {
   
   if (save.out || read_imps_from_file) {
@@ -82,12 +82,13 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     stop("Please supply a single exposure.", 
          call. = FALSE)
   }
-  else if (!is.character(exposure) || length(exposure) != 1) {
-    stop("Please supply a single exposure as a character.", 
+  else if (!is.character(exposure)) {
+    stop("Please supply exposure as a character.", 
          call. = FALSE)
   }
-  else if (grepl("\\.", exposure)) {
-    stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
+  else if (sum(unlist(lapply(exposure, 
+                             function(x){grepl(sep, x)}))) != length(exposure)) {
+    stop("Please supply exposures variables with time suffixes. You can specify a delimiiter in 'sep'.",
          call. = FALSE)
   }
   
@@ -97,10 +98,6 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
   }
   else if (!is.character(outcome) || length(outcome) != 1) {
     stop("Please supply a single outcome as a character.", 
-         call. = FALSE)
-  }
-  else if (!grepl("\\.", outcome)) {
-    stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
          call. = FALSE)
   }
   
@@ -170,13 +167,15 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     }
   }
   
+  exp_long <- sapply(strsplit(exposure[1], sep), head, 1)
+  
   
   if (read_imps_from_file ) {
     imputed_datasets <- list()
     
     if (!file.exists(file.path(home_dir, "imputations", 
                                sprintf("%s-%s_all_imp.rds",
-                                       exposure, outcome)))) {
+                                       exp_long, outcome)))) {
       
       stop("Imputations have not been created and saved locally. Please set 'read_imps_from_file' == 'FALSE' and re-run.", 
            call. = FALSE)
@@ -185,7 +184,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     
     imp <- readRDS(file.path(home_dir, "imputations", 
                              sprintf("%s-%s_all_imp.rds",
-                                     exposure, outcome)))
+                                     exp_long, outcome)))
     
     if (!mice::is.mids(imp)) {
       stop("The locally saved file is not a single mids object. If you have .csv files of data imputed using another program, please read them in as a list.",
@@ -229,7 +228,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     data <- data[order(names(data))]
     
     data_to_impute <- tibble::tibble(data)
-    i <- NULL #to avoid note in check()
+    i <- NULL # to avoid note in check()
     
     if (!is.na(seed)) {
       set.seed(seed)
@@ -240,13 +239,11 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
     cat("\n")
     
     if (para_proc) {
-      # if (!is.na(seed)) {
-      #   set.seed(seed)
-      # }
-      
+
       # Configure parallelization
       # nCores <- min(parallel::detectCores(), 8)
-      nCores <- 2 #apparently CRAN limits number of cores available to 2
+      
+      nCores <- 2 # apparently CRAN limits number of cores available to 2
       options(mc.cores = nCores)
       options(cores = nCores)
       doParallel::registerDoParallel(cores = nCores)
@@ -271,10 +268,6 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
       }
     }
     else {
-      
-      # if (!is.na(seed)) {
-      #   set.seed(seed)
-      # }
 
       imputed_datasets <- mice::mice(data_to_impute, 
                                      m = m, 
@@ -294,7 +287,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
       
       saveRDS(imputed_datasets,
               file.path(home_dir, "imputations", sprintf("%s-%s_all_imp.rds", 
-                                                         exposure, outcome)))
+                                                         exp_long, outcome)))
     }
     
     # Print warnings
@@ -316,7 +309,7 @@ imputeData <- function(data, exposure, outcome, m = NA, method = NA, maxit = NA,
         
         csv_file <- file.path(home_dir, "imputations", 
                               sprintf("%s-%s_imp%s.csv", 
-                                      exposure, outcome, k))
+                                      exp_long, outcome, k))
         
         utils::write.csv(mice::complete(imputed_datasets, k), 
                          file = csv_file)

@@ -1,0 +1,31 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-05-21"
+---
+
+```{r}
+
+reference <- c("l-l-l")
+
+comparison <- c("h-h-h", 
+                "l-l-h", 
+                "h-l-l", 
+                "l-h-l")
+
+outcome <-  "StrDif_Tot.58"
+
+home_dir <- '/Users/isabella/Desktop/BSL Lab/MSMs/devMSMs/testing/'
+
+
+inspectData(data = data, 
+            obj = obj, 
+            outcome = outcome, 
+            sep = "\\.",
+            hi_lo_cut = hi_lo_cut,
+            reference = reference, 
+            comparison = comparison, 
+            verbose = TRUE, 
+            save.out = FALSE)
+```
+

@@ -4,14 +4,7 @@
 #' @param data data in wide format as: a data frame, list of imputed data
 #'   frames, or mids object
 #' @param home_dir (optional) path to home directory (required if save.out = TRUE)
-#' @param exposure name of exposure variable
-#' @param exposure_time_pts list of integers at which weights will be
-#'   created/assessed that correspond to time points when exposure was measured
 #' @param outcome name of outcome variable with ".timepoint" suffix
-#' @param tv_confounders list of time-varying confounders with ".timepoint"
-#'   suffix (time-varying exposure variables requires to be listed here)
-#' @param ti_confounders list of time invariant confounders
-#' @param epochs (optional) data frame of exposure epoch labels and values
 #' @param hi_lo_cut (optional) list of two numbers indicating quantile values
 #'   that reflect high and low values, respectively, for continuous exposure
 #'   (default is median split)
@@ -40,50 +33,58 @@
 #' test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
 #'
 #' inspectData(data = test,
-#'             exposure = "A",
-#'             exposure_time_pts = c(1, 2, 3),
+#'             exposure = c("A.1", "A.2", "A.3"),
 #'             outcome = "D.3",
-#'             tv_confounders = c("A.1", "A.2", "A.3"),
-#'             ti_confounders = "C",
 #'             save.out = FALSE)
 #' inspectData(data = test,
-#'             exposure = "A",
-#'             exposure_time_pts = c(1, 2, 3),
+#'             exposure = c("A.1", "A.2", "A.3"),
 #'             outcome = "D.3",
-#'             tv_confounders = c("A.1", "A.2", "A.3", "B.1", "B.2", "B.3"),
-#'             ti_confounders = "C",
-#'             save.out = FALSE)
-#' inspectData(data = test,
-#'             exposure = "A",
-#'             exposure_time_pts = c(1, 2, 3),
-#'             outcome = "D.3",
-#'             tv_confounders = c("A.1", "A.2", "A.3", "B.1", "B.2", "B.3"),
-#'             ti_confounders = "C",
 #'             hi_lo_cut = c(0.8, 0.2),
 #'             save.out = FALSE)
 #' inspectData(data = test,
-#'             exposure = "A",
-#'             exposure_time_pts = c(1, 2, 3),
+#'             exposure = c("A.1", "A.2", "A.3"),
 #'             outcome = "D.3",
-#'             tv_confounders = c("A.1", "A.2", "A.3", "B.1", "B.2", "B.3"),
-#'             ti_confounders = "C",
 #'             hi_lo_cut = c(0.8, 0.2),
 #'             reference = "l-l-l",
 #'             comparison = "h-h-h",
 #'             save.out = FALSE)
-#' inspectData(data = test,
-#'             exposure = "A",
-#'             exposure_time_pts = c(1, 2, 3),
-#'             outcome = "D.3",
-#'             tv_confounders = c("A.1", "A.2", "A.3", "B.1", "B.2", "B.3"),
-#'             ti_confounders = "C",
-#'             epochs = data.frame(epochs = c("Infancy", "Toddlerhood"),
-#'                                 values = I(list(c(1, 2), c(3)))),
-#'             save.out = FALSE)
 
 
-inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confounders, tv_confounders, epochs = NULL,
-                         hi_lo_cut = NULL, reference = NULL, comparison = NULL, home_dir = NA, verbose = TRUE, save.out = TRUE) {
+
+inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL, 
+                         reference = NULL, 
+                         comparison = NULL, verbose = TRUE, save.out = TRUE) {
+  
+  # Extract var_tab and get variables
+  
+  var_tab <- attr(obj, "var_tab")
+  ti_confounders <- var_tab$var[var_tab$type == "ti_conf"]
+  ti_conf_time <- var_tab$time[var_tab$type == "ti_conf"]
+  tv_confounders <- var_tab$var[var_tab$type == "tv_conf"]
+  tv_conf_time <- var_tab$time[var_tab$type == "tv_conf"]
+  tv_conf_time <- tv_conf_time - 0.01 * var_tab$concur_conf[var_tab$type == "tv_conf"]
+  exposure <- var_tab$var[var_tab$type == "exposure"]
+  exposure_time_pts <- var_tab$time[var_tab$type == "exposure"]
+  epoch <- attr(obj, "epoch")
+  #home_dir = NA
+  
+  exposure_type <- attr(obj, "exposure_type")
+  
+  exp_long <- sapply(strsplit(exposure[1], sep), head, 1)
+  
+  n_epoch <- length(unique(epoch))
+  exposure_levels <- apply(
+    perm2(n_epoch, c("l", "h")),
+    1,
+    function(z) {
+      paste(z, sep = "", collapse = "-")
+    }
+  )
+  
+  epoch_vars <- exposure
+  if (any(exposure != epoch)) {
+    epoch_vars <- .get_epoch_var_names(exposure, epoch, sep = sep)
+  }
   
   if (save.out) {
     if (missing(home_dir)) {
@@ -116,32 +117,6 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
     }
   }
   
-  if (missing(exposure)) {
-    stop("Please supply a single exposure.", 
-         call. = FALSE)
-  }  
-  else if (!is.character(exposure) || length(exposure) != 1) {
-    stop("Please supply a single exposure as a character.",
-         call. = FALSE)
-  }
-  else if (grepl("\\.", exposure)) {
-    stop("Please supply an exposure without the '.time' suffix or any '.' special characters. Note that the exposure variables in your dataset should be labeled with the '.time' suffix.",
-         call. = FALSE)
-  }
-  
-  if (missing(exposure_time_pts)) {
-    stop("Please supply the exposure time points at which you wish to create weights.", 
-         call. = FALSE)
-  }  
-  else if (!is.numeric(exposure_time_pts)) {
-    stop("Please supply a list of exposure time points (at least one) as integers.", 
-         call. = FALSE)
-  }
-  else if (!length(exposure_time_pts) > 1) {
-    stop("Please supply at least two exposure time points.",
-         call. = FALSE)
-  }
-  
   if (missing(outcome)) {
     stop("Please supply a single outcome.", 
          call. = FALSE)
@@ -150,61 +125,11 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
     stop("Please supply a single outcome as a character.", 
          call. = FALSE)
   }
-  else if (!grepl("\\.", outcome)) {
+  else if (!grepl(sep, outcome)) {
     stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
          call. = FALSE)
   }
-  else if (as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) != 
-           exposure_time_pts[length(exposure_time_pts)] && 
-           !as.numeric(unlist(sapply(strsplit(outcome, "\\."), "[", 2))) > 
-           exposure_time_pts[length(exposure_time_pts)] ) {
-    stop("Please supply an outcome variable with a time point that is equal to or greater than the last exposure time point.",
-         call. = FALSE)
-  }
   
-  if (missing(tv_confounders)) {
-    stop("You have not supplied any time-varying confounders. Any time-varying exposure variables should be listed in tv_confounders.", 
-         call. = FALSE)
-  }
-  else if (!is.character(tv_confounders)) {
-    stop("Please provide a list of time-varying confounders as character strings.",
-         call. = FALSE)
-  }
-  else if (any(!grepl("\\.", tv_confounders))) {
-    stop("Please list all time-varying confounders with suffix '.time' that should match variables in dataset.",
-         call. = FALSE)
-  }
-  else if (any(!paste(exposure, exposure_time_pts, sep = ".") %in% tv_confounders)) {
-    stop("Please include all emeasured exposure variables in wide format in tv_confounders.",
-         call. = FALSE)
-  }
-  
-  if (missing(ti_confounders)) {
-    stop("Please supply a list of time invariant confounders.", 
-         call. = FALSE)
-  }
-  else if (any(grepl("\\.", ti_confounders))) {
-    stop("Time invariant confounders should not include the suffix '.time' or any '.' special characters.",
-         call. = FALSE)
-  }
-  
-  if(!is.null(epochs)){
-    if ( !is.data.frame(epochs) || ncol(epochs) != 2 || 
-         !all(colnames(epochs) == c("epochs", "values"))) {
-      stop("If you supply epochs, please provide a dataframe with two columns of epochs and values.",
-           call. = FALSE)
-    }
-    if (anyNA(epochs$values)) {
-      stop("Please provide one or a list of several numeric time values for each epoch.",
-           call. = FALSE)
-    }
-    if (!is.numeric(unlist(epochs$values)) || 
-        any(!as.numeric(unlist(epochs$values)) %in% exposure_time_pts)) {
-      stop("Please supply epochs with numeric values that are included in the exposure time points.",
-           call. = FALSE)
-    }
-    
-  }
   
   if (!is.logical(verbose)) {
     stop("Please set verbose to either TRUE or FALSE.", 
@@ -225,547 +150,372 @@ inspectData <- function (data, exposure, exposure_time_pts, outcome, ti_confound
   }
   
   
-  devtools::install_github("istallworthy/devMSMs") #temporary
+  # devtools::install_github("istallworthy/devMSMs") # to get utils functions 
   
+  if (is.data.frame(data)) {
+    data <- list(data)
+    to = 1
+  } else if (mice::is.mids(data)) {
+    to = data$m 
+  } else if (inherits(data, "list") && !is.data.frame(data)) {
+    to = length(data)
+  }
   
-  #evaluates history makeup for all imputed datasets 
+  # evaluating histories
   
-  if (verbose) {
+  lapply(1:to, function(d) {
+    
+    if (length(data) > 1){
+      message(sprintf("Imputation %s", d))
+    }
+    
     if (mice::is.mids(data)) {
-      
-      lapply(1:data$m, function(x) {
-        data2 <- mice::complete(data, x)
-        
-        message(sprintf("Imputation %s", x))
-        
-        
-        devMSMs::eval_hist(data = data2, exposure = exposure, epochs = epochs,
-                           time_pts = exposure_time_pts, hi_lo_cut = hi_lo_cut, 
-                           ref = reference, comps = comparison)
-      } )
-      
-      #conducts rest on just first imputed dataset
-      
-      message("The following inspection is conducted on the first imputed dataset.")
-      
-      data <- as.data.frame(mice::complete(data, 1))
+      data_temp <- mice::complete(data, d)
+    } else {
+      data_temp <- data[[1]]
     }
     
-    else if (inherits(data, "list") && !is.data.frame(data)) { 
-      
-      lapply(1:length(data), function(x) {
-        
-        data2 <- data[[x]]
-        
-        message(sprintf("Imputation %s", x))
-        
-        devMSMs::eval_hist(data = data2, exposure = exposure, epochs = epochs,
-                           time_pts = exposure_time_pts, hi_lo_cut = hi_lo_cut, 
-                           ref = reference, comps = comparison)
-      } )
-      
-      #conducts rest on just first imputed dataset
-      
-      message("The following inspection is conducted on the first imputed dataset.")
-      
-      
-      data <- data[[1]]
+    # Create epoch-averages of exposure variables
+    
+    epoch_vars <- exposure
+    if (any(exposure != epoch)) {
+      epoch_vars <- .get_epoch_var_names(exposure, epoch, sep = sep)
+    }
+    if (any(exposure != epoch)) {
+      epoch_df <- .generate_epoch_exposures(data_temp, exposure, epoch, sep)
+      epoch_vars <- colnames(epoch_df)
+      missing_columns <- !(colnames(epoch_df) %in% colnames(data_temp))
+      data_temp <- cbind(data_temp, epoch_df[, missing_columns])
     }
     
-  }
-  
-  # long format to wide
-  
-  if ("WAVE" %in% colnames(data)) {
-    
-    v <- sapply(strsplit(tv_confounders, "\\."), "[", 1)
-    v <- v[!duplicated(v)]
-    data_wide <- stats::reshape(data = data, 
-                                idvar = "ID", 
-                                v.names = v, 
-                                timevar = "WAVE",
-                                direction = "wide")
-    
-    #removing all NA cols (i.e., when data were not collected)
-    
-    data_wide <- data_wide[, colSums(is.na(data_wide)) < nrow(data_wide)]
-    data <- data_wide
-  }
-  
-  
-  if (!inherits(data, "data.frame")) {
-    warning(sprintf("Your data is a %s. Convert to data frame before running devMSMs.",
-                    class(data)),
-            call. = FALSE)
-    
-  }
-  
-  #checking exposure type
-  
-  if (any(as.logical(unlist(lapply(data[, paste0(exposure, '.', exposure_time_pts)], function(x){
-    !inherits(x, "numeric") && !inherits(x, "integer")
-  }))))) {
-    stop("Please provide an exposure in numeric or integer form.",
-         call. = FALSE)
-  }
-  else if (any(as.logical(unlist(lapply(data[, paste0(exposure, '.', exposure_time_pts)], function(x) {
-    inherits(x, "integer") && unique(x) != c(1, 0) } ))))) {
-    stop("Please make sure your exposure levels are 1s and 0s for integer exposures.",
-         call. = FALSE)
-  }
-  
-  exposure_type <- if (inherits(data[, paste0(exposure, '.', exposure_time_pts[1])], 
-                                "numeric")) "continuous" else "binary"
-  
-  
-  
-  #identifying tv interactions
-  
-  if (any(grepl("\\:", tv_confounders))) {
-    tv_ints <- tv_confounders[grepl("\\:", tv_confounders)]
-    tv_confounders <- tv_confounders[!grepl("\\:", tv_confounders)]
-  } 
-  else {
-    tv_ints <- {}
-  }
-  
-  #identifying ti interactions
-  if (any(grepl("\\:", ti_confounders))) {
-    ti_ints <- ti_confounders[grepl("\\:", ti_confounders)]
-    ti_confounders <- ti_confounders[!grepl("\\:", ti_confounders)]
-  }
-  else {
-    ti_ints <- {}
-  }
-  
-  
-  if (any(!exposure_time_pts %in% as.numeric(unlist(sapply(strsplit(tv_confounders, 
-                                                                    "\\."), "[", 2))))) {
-    stop("Exposure time points and the time points at which time-varying confounders are measured must fully overlap.",
-         call. = FALSE) 
-  }
-  
-  
-  #identifying confounder time points 
-  
-  time_pts <- as.numeric(sapply(strsplit(tv_confounders[grepl(exposure, 
-                                                              tv_confounders)], 
-                                         "\\."), "[", 2))
-  if (length(exposure_time_pts) > 1) {
-    if (any(!paste(exposure, exposure_time_pts, sep = ".") %in% tv_confounders)) {
-      stop("Please include all exposure variables in wide format in tv_confounders.",
-           call. = FALSE)
-    }
-  }
-  
-  else {
-    time_pts <- NULL
-  }
-  
-  
-  #checking that all measured exposure vars are in tv_confounders
-  
-  if (any(!names(data)[sapply(strsplit(names(data), "\\."), "[", 1) %in% exposure] 
-          %in% tv_confounders)) {
-    warning("All measured time-varying exposure variables should be included as time-varying confounders.",
-            call. = FALSE)
-  }
-  
-  #checking any tv outcome < outcome time pt listed as tv confounder 
-  
-  if (length(names(data)[sapply(strsplit(names(data), "\\."), "[", 1) %in% 
-                         sapply(strsplit(outcome, "\\."), "[", 1)]) > 1 &&
-      any(!names(data)[sapply(strsplit(names(data), "\\."), "[", 1) %in% 
-                       sapply(strsplit(outcome, "\\."), "[", 1)] 
-          %in% tv_confounders)) {
-    warning("All measured time-varying outcome variables at times earlier than the final outcome time point should be included as time-varying confounders.",
-            call. = FALSE)
-  }
-  
-  #checking that tv_confounder time pts are equal to or subset of time pts when exposure was measured in data
-  
-  if ( any(!sapply(strsplit(names(data)[sapply(strsplit(names(data), "\\."), "[", 1) 
-                                        %in% exposure], "\\."), "[", 2) %in%
-           sapply(strsplit(tv_confounders, "\\."), "[", 2)) ||
-       any(!sapply(strsplit(tv_confounders, "\\."), "[", 2) %in% 
-           sapply(strsplit(names(data)[sapply(strsplit(names(data), "\\."), "[", 1) 
-                                       %in% exposure], "\\."), "[", 2))) {
-    stop("The time points at which time-varying confounders are measured must be equal to or a subset of the time points at which exposure is measured in the data.",
-         call. = FALSE)
-  }
-  
-  
-  
-  # Confounder summary
-  
-  potential_covariates <- colnames(data)[!(colnames(data) %in% c("ID"))]
-  
-  
-  if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)) {
-    stop(sprintf("%s time-varying confounders are not present in the dataset.", 
-                 paste(tv_confounders[!tv_confounders %in% potential_covariates], collapse = ", ")),
-         call. = FALSE)
-  }
-  
-  if (!is.null(tv_ints)) {
-    if (!all(as.character(unlist(strsplit(tv_ints, "\\:"))) %in% potential_covariates) ) {
-      stop(sprintf("%s time-varying interaction confounders are not present in the dataset.",
-                   paste(as.character(unlist(strsplit(tv_ints, "\\:")))[!as.character(unlist(strsplit(tv_ints, "\\:"))
-                                                                                      %in% potential_covariates)], collapse = ", ")),
-           call. = FALSE)
-    }
-  }
-  
-  if (any(duplicated(tv_confounders))) {
-    stop(sprintf("The following time-varying confounders are duplicated: %s.",
-                 paste(tv_confounders[duplicated(tv_confounders)], 
-                       collapse = ", ")),
-         call. = FALSE)
-  }
-  
-  
-  if (sum(ti_confounders %in% potential_covariates) != length(ti_confounders)) {
-    stop(paste(ti_confounders[!ti_confounders %in% potential_covariates]),
-         " time invariant confounders are not present in the dataset.", 
-         call. = FALSE)
-  }
-  
-  if (!is.null(ti_ints)) {
-    if (!all(as.character(unlist(strsplit(ti_ints, "\\:"))) %in% potential_covariates) ) {
-      stop(sprintf("%s time-varying interaction confounders are not present in the dataset.",
-                   paste(as.character(unlist(strsplit(ti_ints, "\\:")))[!as.character(unlist(strsplit(ti_ints, "\\:"))
-                                                                                      %in% potential_covariates)], collapse = ", ")),
-           call. = FALSE)
-    }
-  }
-  
-  if (any(duplicated(ti_confounders))) {
-    stop(sprintf("The following time invariant confounders are duplicated: %s.",
-                 paste(ti_confounders[duplicated(ti_confounders)], 
-                       collapse = ", ")),
-         call. = FALSE)
-  }
-  
-  all_potential_covariates <- c(ti_confounders, tv_confounders, ti_ints)
-  all_potential_covariates <- all_potential_covariates[order(all_potential_covariates)]
-  
-  
-  # Format for table output to visualize available covariates by time point
-  
-  covar_table <- data.frame(variable = sapply(strsplit(all_potential_covariates, 
-                                                       "\\."), "[", 1),
-                            time_pt = sapply(strsplit(all_potential_covariates, 
-                                                      "\\."), "[", 2))
-  if (!is.null(tv_ints)){
-    covar_table <- rbind(covar_table,
-                         do.call(rbind.data.frame, lapply(tv_ints, function(x) {
-                           data.frame(variable = x,
-                                      time_pt = sub('.*\\.', '', x)) })))
-  }
-  
-  covar_table <- covar_table[order(covar_table$time_pt, covar_table$variable), ]
-  
-  if (sum(is.na(covar_table$time_pt)) < nrow(covar_table)) {
-    covar_table <- aggregate(variable ~ time_pt, data = covar_table,
-                             FUN = function(x) variable = toString(x))
-  }
-  
-  if (save.out) {
-    csv_file <- file.path(home_dir, 
-                          sprintf("%s-%s_covariates_considered_by_time_pt.csv",
-                                  exposure, outcome))
-    
-    utils::write.csv(covar_table, file = csv_file)
-  }
-  
-  
-  
-  #adds interactions to data
-  
-  factor_covariates <- names(data)[sapply(data, is.factor)]
-  factor_covariates <- setdiff(factor_covariates, "ID")
-  
-  if (!is.null(ti_ints) || !is.null(tv_ints)) {
-    ints <- c(ti_ints, tv_ints)
-    
-    #making interactions 
-    
-    for (x in seq_len(length(ints))) {
-      vars <- as.character(unlist(strsplit(ints[x], "\\:")))
-      num_comp <- length(vars)
-      
-      f_vars <- vars[vars %in% factor_covariates]
-      
-      ints2 <- utils::combn(vars, num_comp)
-      ints2 <- as.data.frame(ints2[, sapply(strsplit(ints2[1, ], "\\_"), "[", 1) != 
-                                     sapply(strsplit(ints2[2, ], "\\_"), "[", 1)])
-      ints2 <- unlist(lapply(1:ncol(ints2), 
-                             function(x) {paste(ints2[, x], collapse = ":")} ))
-      ints2 <- ints2[!duplicated(ints2)]
-      
-      prods <- lapply(ints2, function(x) {
-        v <- as.character(unlist(strsplit(x, "\\:")))
-        temp <- as.data.frame(data[, v])
-        
-        #make factors numeric to multiply 
-        if (length(f_vars) > 0) {
-          temp[, names(temp) %in% f_vars] <- 
-            t(as.data.frame(lapply(temp[, names(temp) %in% f_vars], unlist)))
-          temp[, names(temp) %in% f_vars] <- 
-            t(as.data.frame(lapply(temp[, names(temp) %in% f_vars], as.numeric)))
-        }
-        
-        prod <- apply(as.matrix(temp), 1, prod)
-        prod
-      })
-      prods <- do.call(rbind.data.frame, prods)
-      prods <- as.data.frame(t(prods))
-      names(prods) <- ints2
-      
-      #make factor class if both components are factors
-      if (length(f_vars) == length(vars)) {
-        for (x in seq_len(length(ints2))) {
-          vars <- as.character(unlist(strsplit(ints2[x], "\\:")))
-          if (all(vars %in% factor_covariates)) {
-            prods[, 1] <- as.factor(prods[, 1])
-          }
-        }
-      }
-      else {
-        
-      }
-      #adding to dataset
-      
-      data <- cbind(data, prods)
-    }
-  }
-  
-
-  
-  unique_vars <- length(unique(c(ti_confounders, 
-                                 sapply(strsplit(all_potential_covariates, 
-                                                 "\\."), "[", 1), tv_ints)))
-  
-  test <- data.frame(matrix(nrow = length(time_pts), ncol = unique_vars))
-  colnames(test) <- unique(c(ti_confounders, 
-                             sapply(strsplit(all_potential_covariates, "\\."),
-                                    "[", 1), tv_ints))[order(unique(c(ti_confounders,
-                                                                      sapply(strsplit(all_potential_covariates,
-                                                                                      "\\."), "[", 1), tv_ints)))]
-  
-  rownames(test) <- time_pts
-  
-  for (l in seq_len(nrow(test))) {
-    z <- c(sapply(strsplit(all_potential_covariates[grepl(paste0(".", rownames(test)[l]),
-                                                          all_potential_covariates)], 
-                           "\\."), "[", 1), ti_confounders)
-    z <-  c(z, tv_ints[as.numeric(sub('.*\\.', '', tv_ints)) == rownames(test)[l]])
-    z <- z[!duplicated(z)]
-    test[l, z ] <- 1
-  }
-  
-  test <- test[, colnames(test)[!(colnames(test) %in% c("ID"))]]
-  NumTimePts <- data.frame(NumTimePts = colSums(test, na.rm = TRUE))
-  test <- rbind(test, t(NumTimePts))
-  NumVars <- data.frame(NumVars = rowSums(test, na.rm = TRUE))
-  test[seq_len(nrow(test)), ncol(test) + 1] <- NumVars
-  
-  if (save.out) {
-    
-    csv_file <- file.path(home_dir,  
-                          sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt.csv",
-                                  exposure, outcome))
-    
-    utils::write.csv(test, file = csv_file)
+    mat <- data_temp[, epoch_vars]
+    epoch_history <- .characterize_exposure(mat, exposure_type)
     
     if (verbose) {
-      print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.")
-      cat("\n")
+      print_eval_hist(epoch_history, epoch, hi_lo_cut, reference, comparison)
+    }
+    
+    
+    
+    # long format to wide
+    
+    if ("WAVE" %in% colnames(data_temp)) {
       
-    }
-  }
-  
-  
-  if (verbose) {
-    message(sprintf("USER ALERT: Below are the %s variables spanning %s unique domains that will be treated as confounding variables for the relation between %s and %s. \n",
-                    as.character(length(all_potential_covariates)),
-                    unique_vars,
-                    exposure,
-                    outcome))
-    
-    message("Please inspect this list carefully. It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point." 
-    )
-    print(c(all_potential_covariates, tv_ints)[!(c(all_potential_covariates, 
-                                                   tv_ints) %in% c("ID"))])
-  }
-  
-  
-  
-  # Data type
-  if (verbose) {
-    cat("\n")
-    cat("The following variables are designated as numeric:", "\n")
-    print(paste(colnames(data)[sapply(data, class) == "numeric"], sep = ",", 
-                collapse = ", "))
-    cat("\n")
-    
-    cat("The following variables are designated as factors:", "\n")
-    print(paste(colnames(data)[sapply(data, class) == "factor"], sep = ",", 
-                collapse = ", "))
-    cat("\n")
-    
-    oth <- data.frame(variable = names(sapply(data, class)) [!sapply(data, class) %in% c("numeric", "factor")],
-                      type = sapply(data, class) [!sapply(data, class) %in% c("numeric", "factor")])
-    
-    if (nrow(oth) > 0 ) {
-      cat(knitr::kable(oth, 
-                       caption = "Other variable types",
-                       format = 'pipe'), 
-          sep = "\n")
-      cat("\n")
+      if (verbose) {
+        message("Reshaping data into wide format.", "\n")
+      }
+      
+      v <- sapply(strsplit(tv_confounders, sep), head, 1)
+      v <- c(v[!duplicated(v)], sapply(strsplit(exposure[1], sep), head, 1))
+      data_wide <- stats::reshape(data = data_temp, 
+                                  idvar = "ID", 
+                                  v.names = v, 
+                                  timevar = "WAVE",
+                                  direction = "wide")
+      
+      data_wide <- data_wide[, colSums(is.na(data_wide)) < nrow(data_wide)]
+      data_temp <- data_wide
     }
     
-    if (sum(sapply(data, is.character)) > 0) {
-      warning(paste0(paste(names(data)[sapply(data, is.character)], sep = ", ", 
-                           collapse = ", "),
-                     " are of class character.", " The package cannot accept character variables."), 
+    
+    if (!inherits(data_temp, "data.frame")) {
+      warning(sprintf("Your data is a %s. Convert to data frame before running devMSMs.",
+                      class(data_temp)),
               call. = FALSE)
-      cat("\n")
+      
     }
-  }
-  
-  #covariate correlations
-  
-  covariates_to_include <- c(all_potential_covariates, tv_ints)
-  
-  
-  # Creates final dataset with only relevant variables
-  
-  covariates_to_include <- covariates_to_include[order(covariates_to_include)]
-  variables_to_include <- unique(c(outcome, covariates_to_include, tv_confounders))
-  data2 <- data[, c("ID", variables_to_include)]
-  
-  # Makes correlation table
-  
-  corr_matrix <- stats::cor(as.data.frame(lapply(data2[, colnames(data2) != "ID"],
-                                                 as.numeric)), 
-                            use = "pairwise.complete.obs")
-  
-  if (save.out) {
-    ggcorrplot::ggcorrplot(corr_matrix,  type = "lower")+
-      ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5, 
-                                                         margin = ggplot2::margin(-2, 0, 0, 0)),  # Order: top, right, bottom, left
-                     axis.text.y = ggplot2::element_text(size = 5, 
-                                                         margin = ggplot2::margin(0, -2, 0, 0))) 
     
-    # Save correlation plot
-    ggplot2::ggsave(filename = file.path(home_dir,
-                                         sprintf("%s-%s_all_vars_corr_plot.pdf",
-                                                 exposure, outcome)))
-
-    print(ggplot2::last_plot())
-
+    # checking exposure type
+    
+    lapply(seq_along(exposure), function(i) {
+      x <- data_temp[, exposure[i]]
+      if (is.integer(x) && !all(na.omit(unique(x)) %in% c(1, 0))) {
+        stop("Please make sure your exposure levels are 1s and 0s for integer exposures.", call. = FALSE)
+      }
+      if (!is.numeric(x) && !is.integer(x)) {
+        stop("Please provide an exposure in numeric or integer form.", call. = FALSE)
+      }
+    })
+    exp1 <- data_temp[, exposure[1]]
+    exposure_type <- ifelse(
+      is.logical(exp1) || all(exp1 %in% c(0, 1), na.rm = TRUE),
+      "binary", "continuous"
+    )
+    
+    
+    # time_pts <- as.numeric(sapply(strsplit(exposure, sep), tail, 1))
+    
+    
+    # checking any tv outcome < outcome time pt listed as tv confounder 
+    
+    if (length(names(data_temp)[sapply(strsplit(names(data_temp), sep), tail, 1) %in% 
+                                sapply(strsplit(outcome, sep), head, 1)]) > 1 &&
+        any(!names(data_temp)[sapply(strsplit(names(data_temp), sep), tail, 1) %in% 
+                              sapply(strsplit(outcome, sep), tail, 1)] 
+            %in% tv_confounders)) {
+      warning("All measured time-varying outcome variables at times earlier than the final outcome time point should be included as time-varying confounders.",
+              call. = FALSE)
+    }
+    
+    
+    # Confounder summary
+    
+    potential_covariates <- colnames(data_temp)[!(colnames(data_temp) %in% c("ID"))]
+    
+    if (sum(tv_confounders %in% potential_covariates) != length(tv_confounders)) {
+      stop(sprintf("%s time-varying confounders are not present in the dataset.", 
+                   paste(tv_confounders[!tv_confounders %in% potential_covariates], collapse = ", ")),
+           call. = FALSE)
+    }
+    
+    
+    if (any(duplicated(tv_confounders))) {
+      stop(sprintf("The following time-varying confounders are duplicated: %s.",
+                   paste(tv_confounders[duplicated(tv_confounders)], 
+                         collapse = ", ")),
+           call. = FALSE)
+    }
+    
+    
+    if (sum(ti_confounders %in% potential_covariates) != length(ti_confounders)) {
+      stop(paste(ti_confounders[!ti_confounders %in% potential_covariates]),
+           " time invariant confounders are not present in the dataset.", 
+           call. = FALSE)
+    }
+    
+    
+    if (any(duplicated(ti_confounders))) {
+      stop(sprintf("The following time invariant confounders are duplicated: %s.",
+                   paste(ti_confounders[duplicated(ti_confounders)], 
+                         collapse = ", ")),
+           call. = FALSE)
+    }
+    
+    all_potential_covariates <- c(ti_confounders, tv_confounders)
+    all_potential_covariates <- all_potential_covariates[order(all_potential_covariates)]
+    
+    
+    # Format for table output to visualize available covariates by time point
+    
+    covar_table <- data.frame(variable = sapply(strsplit(all_potential_covariates, 
+                                                         sep), head, 1),
+                              time_pt = sapply(strsplit(all_potential_covariates, 
+                                                        sep), tail, 1))
+    
+    covar_table <- covar_table[order(covar_table$time_pt, covar_table$variable), ]
+    
+    if (sum(is.na(covar_table$time_pt)) < nrow(covar_table)) {
+      covar_table <- aggregate(variable ~ time_pt, data = covar_table,
+                               FUN = function(x) variable = toString(x))
+    }
+    
+    if (save.out) {
+      csv_file <- file.path(home_dir, 
+                            sprintf("%s-%s_covariates_considered_by_time_pt_%s.csv",
+                                    exp_long, outcome, d))
+      
+      utils::write.csv(covar_table, file = csv_file)
+    }
+    
+    
+    unique_vars <- length(unique(c(ti_confounders, 
+                                   sapply(strsplit(all_potential_covariates, 
+                                                   sep), head, 1))))
+    
+    test <- data.frame(matrix(nrow = length(time_pts), ncol = unique_vars))
+    colnames(test) <- unique(c(ti_confounders, 
+                               sapply(strsplit(all_potential_covariates, sep),
+                                      head, 1)))[order(unique(c(ti_confounders,
+                                                                sapply(strsplit(all_potential_covariates,
+                                                                                sep), head, 1))))]
+    
+    rownames(test) <- time_pts
+    
+    for (l in seq_len(nrow(test))) {
+      z <- c(sapply(strsplit(all_potential_covariates[grepl(paste0(".", rownames(test)[l]),
+                                                            all_potential_covariates)], 
+                             sep), head, 1), ti_confounders)
+      z <- z[!duplicated(z)]
+      test[l, z ] <- 1
+    }
+    
+    test <- test[, colnames(test)[!(colnames(test) %in% c("ID"))]]
+    NumTimePts <- data.frame(NumTimePts = colSums(test, na.rm = TRUE))
+    test <- rbind(test, t(NumTimePts))
+    NumVars <- data.frame(NumVars = rowSums(test, na.rm = TRUE))
+    test[seq_len(nrow(test)), ncol(test) + 1] <- NumVars
+    
+    if (save.out) {
+      
+      csv_file <- file.path(home_dir,  
+                            sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt_%s.csv",
+                                    exp_long, outcome, d))
+      
+      utils::write.csv(test, file = csv_file)
+      
+      if (verbose) {
+        print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.")
+        cat("\n")
+        
+      }
+    }
+    
+    
+    if (verbose) {
+      message(sprintf("USER ALERT: Below are the %s variables spanning %s unique domains that will be treated as confounding variables for the relation between %s and %s. \n",
+                      as.character(length(all_potential_covariates)),
+                      unique_vars,
+                      exp_long,
+                      outcome))
+      
+      message("Please inspect this list carefully. It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point." 
+      )
+      print(c(all_potential_covariates, tv_ints)[!(c(all_potential_covariates) %in% c("ID"))])
+    }
+    
+    
+    
+    # Data type
+    
     if (verbose) {
       cat("\n")
-      cat("A correlation plot of all variables in the dataset has been saved in the home directory", "\n")
+      cat("The following variables are designated as numeric:", "\n")
+      print(paste(colnames(data_temp)[sapply(data_temp, class) == "numeric"], sep = ",", 
+                  collapse = ", "))
       cat("\n")
+      
+      cat("The following variables are designated as factors:", "\n")
+      print(paste(colnames(data_temp)[sapply(data_temp, class) == "factor"], sep = ",", 
+                  collapse = ", "))
+      cat("\n")
+      
+      oth <- data.frame(variable = names(sapply(data_temp, class)) [!sapply(data_temp, class) %in% c("numeric", "factor")],
+                        type = sapply(data_temp, class) [!sapply(data_temp, class) %in% c("numeric", "factor")])
+      
+      if (nrow(oth) > 0 ) {
+        cat(knitr::kable(oth, 
+                         caption = "Other variable types",
+                         format = 'pipe'), 
+            sep = "\n")
+        cat("\n")
+      }
+      
+      if (sum(sapply(data_temp, is.character)) > 0) {
+        warning(paste0(paste(names(data_temp)[sapply(data_temp, is.character)], sep = ", ", 
+                             collapse = ", "),
+                       " are of class character.", " The package cannot accept character variables."), 
+                call. = FALSE)
+        cat("\n")
+      }
     }
-  }
-  
-  #history examining
-  if (verbose) {
-    devMSMs::eval_hist(data = data, exposure = exposure, epochs = epochs,
-                       time_pts = exposure_time_pts, hi_lo_cut = hi_lo_cut, 
-                       ref = reference, comps = comparison)
-  }
-  
-  
-  
-  # Exposure summary
-  
-  exp_names <- colnames(data)[(grepl(exposure, colnames(data)))]
-  exposure_summary <- data[, exp_names]
-  exposure_summary <- summary(exposure_summary)
-  
-  
-  if (save.out) {
-    k <- knitr::kable(exposure_summary, 
-                      caption = sprintf("Summary of %s Exposure Information",
-                                        exposure),
-                      format = 'html') 
-    kableExtra::save_kable(k, 
-                           file = file.path(home_dir, 
-                                            sprintf("%s_exposure_info.html",
-                                                    exposure)))
+    
+    #covariate correlations
+    
+    covariates_to_include <- c(all_potential_covariates)
+    
+    
+    # Creates final dataset with only relevant variables
+    
+    covariates_to_include <- covariates_to_include[order(covariates_to_include)]
+    variables_to_include <- unique(c(outcome, covariates_to_include, tv_confounders))
+    data2 <- data_temp[, c("ID", variables_to_include)]
+    
+    # Makes correlation table
+    
+    corr_matrix <- stats::cor(as.data.frame(lapply(data2[, colnames(data2) != "ID"],
+                                                   as.numeric)), 
+                              use = "pairwise.complete.obs")
+    
+    if (save.out) {
+      ggcorrplot::ggcorrplot(corr_matrix,  type = "lower")+
+        ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5, 
+                                                           margin = ggplot2::margin(-2, 0, 0, 0)),  # Order: top, right, bottom, left
+                       axis.text.y = ggplot2::element_text(size = 5, 
+                                                           margin = ggplot2::margin(0, -2, 0, 0))) 
+      
+      # Save correlation plot
+      ggplot2::ggsave(filename = file.path(home_dir,
+                                           sprintf("%s-%s_all_vars_corr_plot+%s.pdf",
+                                                   exp_long, outcome, d)))
+      
+      print(ggplot2::last_plot())
+      
+      if (verbose) {
+        cat("\n")
+        cat("A correlation plot of all variables in the dataset has been saved in the home directory", "\n")
+        cat("\n")
+      }
+    }
+    
+    
+    
+    # Exposure summary
+    
+    exp_names <- exposure
+    exposure_summary <- data_temp[, exp_names]
+    exposure_summary <- summary(exposure_summary)
+    
+    
+    if (save.out) {
+      k <- knitr::kable(exposure_summary, 
+                        caption = sprintf("Summary of %s Exposure Information",
+                                          exp_long),
+                        format = 'html') 
+      kableExtra::save_kable(k, 
+                             file = file.path(home_dir, 
+                                              sprintf("%s_exposure_info_%s.html",
+                                                      exp_long, d)))
+      if (verbose){
+        
+        cat(sprintf("%s exposure descriptive statistics have now been saved in the home directory. \n",
+                    exp_long))
+        cat("\n")
+      }
+    }
     if (verbose) {
       cat(knitr::kable(exposure_summary, 
-                       caption = paste0("Summary of ", exposure, 
+                       caption = paste0("Summary of ", exp_long, 
                                         " Exposure Information"),
                        format = 'pipe'), sep = "\n")
       cat("\n")
       
-      cat(sprintf("%s exposure descriptive statistics have now been saved in the home directory. \n",
-                  exposure))
+    }
+    
+    
+    # Outcome summary
+    
+    out_names <- colnames(data_temp)[(grepl(sapply(strsplit(outcome, sep), head, 1), 
+                                            colnames(data_temp)))]
+    outcome_summary <- data_temp[, out_names]
+    
+    if (verbose) {
+      cat(sprintf("Your outcome variable(s) have the following type(s): %s",
+                  paste(class(data_temp[, out_names]), collapse = ", ")))
       cat("\n")
     }
-  }
-  
-  
-  
-  # Exposure history summary
-  
-  if ( is.null(epochs)) { #making epochs time pts if not specified by user
-    epochs <- data.frame(epochs = as.character(exposure_time_pts),
-                         values = exposure_time_pts)
-  }
-  else {
-    if ( !is.data.frame(epochs) || ncol(epochs) != 2 || 
-         sum(colnames(epochs) == c("epochs", "values")) != ncol(epochs)) {
-      stop("If you supply epochs, please provide a dataframe with two columns of epochs and values.",
-           call. = FALSE)
-    }
-    if (anyNA(epochs$values)) {
-      stop("Please provide one or a list of several values for each epoch.", 
-           call. = FALSE)
-    }
-  }
-  
-  
-  # Outcome summary
-  
-  out_names <- colnames(data)[(grepl(sapply(strsplit(outcome, "\\."),"[", 1), 
-                                     colnames(data)))]
-  outcome_summary <- data[, out_names]
-  
-  if (verbose) {
-    cat(sprintf("Your outcome variable(s) have the following type(s): %s",
-                paste(class(data[, out_names]), collapse = ", ")))
-    cat("\n")
-  }
-  outcome_summary <- summary(outcome_summary)
-  
-  if (save.out) {
-    k <-  knitr::kable(outcome_summary, 
-                       caption = paste0("Summary of Outcome ",
-                                        sapply(strsplit(outcome, "\\."), "[", 1), 
-                                        " Information"), 
-                       format = 'html') 
-    kableExtra::save_kable(k, 
-                           file = file.path(home_dir, 
-                                            sprintf("%s_outcome_info.html", 
-                                                    sapply(strsplit(outcome, 
-                                                                    "\\."), "[", 1))))
+    outcome_summary <- summary(outcome_summary)
     
+    if (save.out) {
+      k <-  knitr::kable(outcome_summary, 
+                         caption = paste0("Summary of Outcome ",
+                                          sapply(strsplit(outcome, sep), head, 1), 
+                                          " Information"), format = 'html') 
+      kableExtra::save_kable(k, 
+                             file = file.path(home_dir, 
+                                              sprintf("%s_outcome_info_%s.html", 
+                                                      sapply(strsplit(outcome, 
+                                                                      sep), head, 1), d)))
+      if (verbose){
+        cat(sprintf("%s outcome descriptive statistics have now been saved in the home directory. \n",
+                    sapply(strsplit(outcome, sep), head, 1)))
+      }
+    }
     if (verbose) {
       cat(knitr::kable(outcome_summary, 
                        caption = paste0("Summary of Outcome ",
-                                        sapply(strsplit(outcome, "\\."), "[", 1), 
-                                        " Information"),
-                       format = 'pipe'), 
-          sep = "\n")
-      
-      cat(sprintf("%s outcome descriptive statistics have now been saved in the home directory. \n",
-                  sapply(strsplit(outcome, "\\."), "[", 1)))
+                                        sapply(strsplit(outcome, sep), head, 1), 
+                                        " Information"), format = 'pipe'),  sep = "\n")
     }
-  }
+    
+  })
 }
