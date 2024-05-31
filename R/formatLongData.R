@@ -35,7 +35,7 @@
 #'                             direction = "long")
 #'
 #' test_long_format <- formatLongData(data = test_long,
-#'                                    exposure = c("A.1", "A.2", "A.3),
+#'                                    exposure = c("A.1", "A.2", "A.3"),
 #'                                    outcome = "D.3",
 #'                                    time_var = "time",
 #'                                    id_var = NA,

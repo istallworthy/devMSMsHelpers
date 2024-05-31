@@ -7,8 +7,8 @@
 formatLongData(
   data,
   exposure,
-  exposure_time_pts,
   outcome,
+  sep = "\\\\.",
   time_var = NA,
   id_var = NA,
   missing = NA,
@@ -23,10 +23,10 @@ formatLongData(
 
 \item{exposure}{name of exposure variable}
 
-\item{exposure_time_pts}{list of integers at which weights will be
-created/assessed that correspond to time points when exposure was measured}
-
 \item{outcome}{name of outcome variable with ".timepoint" suffix}
+
+\item{sep}{(optional) delimiter for time integer; must be in regex format,
+e.g., "\\." (default is period)}
 
 \item{time_var}{(optional) variable name in original dataset demarcating time}
 
@@ -63,13 +63,12 @@ test <- data.frame(ID = 1:50,
                    D.3 = rnorm(n = 50))
 
 test_long <- stats::reshape(data = test,
-                            idvar = "ID", #'list ID variable
+                            idvar = "ID", 
                             varying = c("A.1", "A.2", "A.3", "B.1", "B.2", "B.3"),
                             direction = "long")
 
 test_long_format <- formatLongData(data = test_long,
-                                   exposure = "A",
-                                   exposure_time_pts = c(1, 2, 3),
+                                   exposure = c("A.1", "A.2", "A.3"),
                                    outcome = "D.3",
                                    time_var = "time",
                                    id_var = NA,
