@@ -7,8 +7,8 @@
 formatWideData(
   data,
   exposure,
-  exposure_time_pts,
   outcome,
+  sep = "\\\\.",
   id_var = NA,
   missing = NA,
   factor_confounders = NULL,
@@ -22,10 +22,10 @@ formatWideData(
 
 \item{exposure}{name of exposure variable}
 
-\item{exposure_time_pts}{list of integers at which weights will be
-created/assessed that correspond to time points when exposure was measured}
-
 \item{outcome}{name of outcome variable with ".timepoint" suffix}
+
+\item{sep}{(optional) delimiter for time integer; must be in regex format,
+e.g., "\\." (default is period)}
 
 \item{id_var}{(optional) variable name in original dataset demarcating ID}
 
@@ -60,8 +60,7 @@ test <- data.frame(ID = 1:50,
                    D.3 = rnorm(n = 50))
 
 test_wide_format <- formatWideData(data = test,
-                                   exposure = "A",
-                                   exposure_time_pts = c(1, 2, 3),
+                                   exposure = c("A.1", "A.2", "A.3"),
                                    outcome = "D.3",
                                    id_var = NA,
                                    missing = NA,

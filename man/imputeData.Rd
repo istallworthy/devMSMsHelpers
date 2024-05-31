@@ -9,6 +9,7 @@ imputeData(
   data,
   exposure,
   outcome,
+  sep = "\\\\.",
   m = NA,
   method = NA,
   maxit = NA,
