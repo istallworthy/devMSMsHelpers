@@ -33,7 +33,8 @@ Imports:
     utils,
     ranger,
     stats,
-    doRNG
+    doRNG,
+    devMSMs
 Suggests:
     missMethods,
     doParallel,
