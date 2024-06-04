@@ -49,6 +49,7 @@ none
 Inspect long/wide/imputed data
 }
 \examples{
+library(devMSMs)
 test <- data.frame(ID = 1:50,
                    A.1 = rnorm(n = 50),
                    A.2 = rnorm(n = 50),
@@ -58,19 +59,24 @@ test <- data.frame(ID = 1:50,
                    B.3 = rnorm(n = 50),
                    C = rnorm(n = 50),
                    D.3 = rnorm(n = 50))
-test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
+obj <- initMSM(
+  test,
+  exposure = c("A.1", "A.2", "A.3"),
+  ti_conf = c("C"),
+  tv_conf = c("B.1", "B.2", "B.3", "D.3")
+)
 
 inspectData(data = test,
-            exposure = c("A.1", "A.2", "A.3"),
+            obj = obj, 
             outcome = "D.3",
             save.out = FALSE)
 inspectData(data = test,
-            exposure = c("A.1", "A.2", "A.3"),
+            obj = obj,
             outcome = "D.3",
             hi_lo_cut = c(0.8, 0.2),
             save.out = FALSE)
 inspectData(data = test,
-            exposure = c("A.1", "A.2", "A.3"),
+            obj = obj, 
             outcome = "D.3",
             hi_lo_cut = c(0.8, 0.2),
             reference = "l-l-l",

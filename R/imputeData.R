@@ -38,14 +38,14 @@
 #'                                             cols_mis = c("A.1", "B.2", "C"),
 #'                                             cols_ctrl = c("B.1", "B.1", "B.1"), 3)
 #' i <- imputeData(data = t_m,
-#'                 exposure = "A",
+#'                 exposure = c("A.1", "A.2", "A.3"),
 #'                 outcome = "D.3",
 #'                 save.out = FALSE)
 #' i <- imputeData(data = t_m,
 #'                 m = 3,
 #'                 method = "pmm",
 #'                 maxit = 1,
-#'                 exposure = "A",
+#'                 exposure = c("A.1", "A.2", "A.3"),
 #'                 outcome = "D.3",
 #'                 para_proc = TRUE,
 #'                 read_imps_from_file = FALSE,

@@ -21,6 +21,7 @@
 #' @return none
 #' @export
 #' @examples
+#' library(devMSMs)
 #' test <- data.frame(ID = 1:50,
 #'                    A.1 = rnorm(n = 50),
 #'                    A.2 = rnorm(n = 50),
@@ -30,19 +31,24 @@
 #'                    B.3 = rnorm(n = 50),
 #'                    C = rnorm(n = 50),
 #'                    D.3 = rnorm(n = 50))
-#' test[, c("A.1", "A.2", "A.3")] <- lapply(test[, c("A.1", "A.2", "A.3")], as.numeric)
+#' obj <- initMSM(
+#'   test,
+#'   exposure = c("A.1", "A.2", "A.3"),
+#'   ti_conf = c("C"),
+#'   tv_conf = c("B.1", "B.2", "B.3", "D.3")
+#' )
 #'
 #' inspectData(data = test,
-#'             exposure = c("A.1", "A.2", "A.3"),
+#'             obj = obj, 
 #'             outcome = "D.3",
 #'             save.out = FALSE)
 #' inspectData(data = test,
-#'             exposure = c("A.1", "A.2", "A.3"),
+#'             obj = obj,
 #'             outcome = "D.3",
 #'             hi_lo_cut = c(0.8, 0.2),
 #'             save.out = FALSE)
 #' inspectData(data = test,
-#'             exposure = c("A.1", "A.2", "A.3"),
+#'             obj = obj, 
 #'             outcome = "D.3",
 #'             hi_lo_cut = c(0.8, 0.2),
 #'             reference = "l-l-l",
@@ -322,14 +328,14 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
                                    sapply(strsplit(all_potential_covariates, 
                                                    sep), head, 1))))
     
-    test <- data.frame(matrix(nrow = length(time_pts), ncol = unique_vars))
+    test <- data.frame(matrix(nrow = length(exposure_time_pts), ncol = unique_vars))
     colnames(test) <- unique(c(ti_confounders, 
                                sapply(strsplit(all_potential_covariates, sep),
                                       head, 1)))[order(unique(c(ti_confounders,
                                                                 sapply(strsplit(all_potential_covariates,
                                                                                 sep), head, 1))))]
     
-    rownames(test) <- time_pts
+    rownames(test) <- exposure_time_pts
     
     for (l in seq_len(nrow(test))) {
       z <- c(sapply(strsplit(all_potential_covariates[grepl(paste0(".", rownames(test)[l]),
@@ -370,7 +376,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
       
       message("Please inspect this list carefully. It should include all time-varying covariates, time invariant covariates, as well as lagged levels of exposure and outcome variables if they were collected at time points earlier than the outcome time point." 
       )
-      print(c(all_potential_covariates, tv_ints)[!(c(all_potential_covariates) %in% c("ID"))])
+      print(c(all_potential_covariates)[!(c(all_potential_covariates) %in% c("ID"))])
     }
     
     
