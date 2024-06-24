@@ -1,23 +1,8 @@
 
 #' Inspect long/wide/imputed data
 #'
-#' @param data data in wide format as: a data frame, list of imputed data
-#'   frames, or mids object
-#' @param home_dir (optional) path to home directory (required if save.out = TRUE)
-#' @param outcome name of outcome variable with ".timepoint" suffix
-#' @param hi_lo_cut (optional) list of two numbers indicating quantile values
-#'   that reflect high and low values, respectively, for continuous exposure
-#'   (default is median split)
-#' @param reference (optional) list of one or more strings of "-"-separated "l" and "h" values
-#'   indicative of a reference exposure history to which to compare comparison,
-#'   required if comparison is specified
-#' @param comparison (optional) list of one or more strings of "-"-separated "l"
-#'   and "h" values indicative of comparison history/histories to compare to
-#'   reference, required if reference is specified
-#' @param verbose (optional) TRUE or FALSE indicator for user output (default is
-#'   TRUE)
-#' @param save.out (optional) TRUE or FALSE indicator to save output and
-#'   intermediary output locally (default is TRUE)
+#' @inheritParams devMSMHelpers_common_docs
+#' 
 #' @return none
 #' @export
 #' @examples
@@ -72,8 +57,11 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
   exposure <- var_tab$var[var_tab$type == "exposure"]
   exposure_time_pts <- var_tab$time[var_tab$type == "exposure"]
   epoch <- attr(obj, "epoch")
-  #home_dir = NA
+  home_dir <- attr(obj, "home_dir")
   
+  dreamerr::check_arg(hi_lo_cut, "NULL | vector numeric len(2) GE{0} LE{1}")
+
+
   exposure_type <- attr(obj, "exposure_type")
   
   exp_long <- sapply(strsplit(exposure[1], sep), head, 1)
@@ -93,18 +81,8 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
   }
   
   if (save.out) {
-    if (missing(home_dir)) {
-      stop("Please supply a home directory.", 
-           call. = FALSE)
-    }
-    else if (!is.character(home_dir)) {
-      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
-           call. = FALSE)
-    }
-    else if (!dir.exists(home_dir)) {
-      stop ("Please provide a valid home directory path if you wish to save output locally.", 
-            call. = FALSE)
-    }
+    dreamerr::check_arg_plus(home_dir, "path dir | NULL",
+                             .message = "Please provide a valid home directory path as a string if you wish to save output locally.")
   }
   
   if (missing(data)) {
@@ -123,38 +101,26 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     }
   }
   
-  if (missing(outcome)) {
-    stop("Please supply a single outcome.", 
-         call. = FALSE)
-  }  
-  else if (!is.character(outcome) || length(outcome) != 1) { 
-    stop("Please supply a single outcome as a character.", 
-         call. = FALSE)
-  }
-  else if (!grepl(sep, outcome)) {
+  dreamerr::check_arg(outcome, "vector character len(1, )")
+  
+  if (!grepl(sep, outcome)) {
     stop("Please supply an outcome variable with a '.time' suffix with the outcome time point such that it matches the variable name in your wide data",
          call. = FALSE)
   }
   
-  
-  if (!is.logical(verbose)) {
-    stop("Please set verbose to either TRUE or FALSE.", 
-         call. = FALSE)
-  }
-  else if(length(verbose) != 1) {
-    stop ("Please provide a single TRUE or FALSE value to verbose.", 
-          call. = FALSE)
+  if (!inherits(obj, "devMSM")) {
+    stop("`obj` must be output from `initMSM`", call. = FALSE)
   }
   
-  if (!is.logical(save.out)) {
-    stop("Please set save.out to either TRUE or FALSE.", 
-         call. = FALSE)
-  }
-  else if (length(save.out) != 1) {
-    stop("Please provide a single TRUE or FALSE value to save.out.", 
-         call. = FALSE)
-  }
   
+  dreamerr::check_arg(verbose, "scalar logical")
+  dreamerr::check_arg(reference, "character vector | NULL")
+  dreamerr::check_arg(comparison, "character vector | NULL")
+  
+  dreamerr::check_arg(save.out, "scalar logical | scalar character")
+  if (verbose) {
+    rlang::check_installed("tinytable")
+  } 
   
   # devtools::install_github("istallworthy/devMSMs") # to get utils functions 
   
@@ -203,7 +169,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     
     
     
-    # long format to wide
+    # For long data: format long to wide
     
     if ("WAVE" %in% colnames(data_temp)) {
       
@@ -248,9 +214,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
       "binary", "continuous"
     )
     
-    
-    # time_pts <- as.numeric(sapply(strsplit(exposure, sep), tail, 1))
-    
+  
     
     # checking any tv outcome < outcome time pt listed as tv confounder 
     
@@ -274,7 +238,6 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
            call. = FALSE)
     }
     
-    
     if (any(duplicated(tv_confounders))) {
       stop(sprintf("The following time-varying confounders are duplicated: %s.",
                    paste(tv_confounders[duplicated(tv_confounders)], 
@@ -282,13 +245,11 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
            call. = FALSE)
     }
     
-    
     if (sum(ti_confounders %in% potential_covariates) != length(ti_confounders)) {
       stop(paste(ti_confounders[!ti_confounders %in% potential_covariates]),
            " time invariant confounders are not present in the dataset.", 
            call. = FALSE)
     }
-    
     
     if (any(duplicated(ti_confounders))) {
       stop(sprintf("The following time invariant confounders are duplicated: %s.",
@@ -317,12 +278,21 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     
     if (save.out) {
       csv_file <- file.path(home_dir, 
-                            sprintf("%s-%s_covariates_considered_by_time_pt_%s.csv",
+                            sprintf("%s-%s_covariates_considered_by_time_pt_%s.html",
                                     exp_long, outcome, d))
       
-      utils::write.csv(covar_table, file = csv_file)
+      # utils::write.csv(tt::tt(covar_table), file = csv_file)
+      # if (fs::path_ext(out) == "pdf") {
+      #   tinytable::save_tt(
+      #     tinytable::format_tt(covar_table, escape = TRUE),
+      #     output = csv_file , overwrite = TRUE
+      #   )
+      # } else {
+        tinytable::save_tt(covar_table, output = csv_file, overwrite = TRUE)
     }
-    
+    #   }
+    # }
+    # }
     
     unique_vars <- length(unique(c(ti_confounders, 
                                    sapply(strsplit(all_potential_covariates, 
@@ -354,10 +324,12 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     if (save.out) {
       
       csv_file <- file.path(home_dir,  
-                            sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt_%s.csv",
+                            sprintf("%s-%s_matrix_of_covariates_considered_by_time_pt_%s.html",
                                     exp_long, outcome, d))
       
-      utils::write.csv(test, file = csv_file)
+      # utils::write.csv(test, file = csv_file)
+      tinytable::save_tt(test, output = csv_file, overwrite = TRUE)
+      
       
       if (verbose) {
         print("See the home directory for a table and matrix displaying all covariates confounders considered at each exposure time point for exposure and outcome.")
@@ -378,7 +350,6 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
       )
       print(c(all_potential_covariates)[!(c(all_potential_covariates) %in% c("ID"))])
     }
-    
     
     
     # Data type
@@ -418,16 +389,9 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     #covariate correlations
     
     covariates_to_include <- c(all_potential_covariates)
-    
-    
-    # Creates final dataset with only relevant variables
-    
     covariates_to_include <- covariates_to_include[order(covariates_to_include)]
     variables_to_include <- unique(c(outcome, covariates_to_include, tv_confounders))
     data2 <- data_temp[, c("ID", variables_to_include)]
-    
-    # Makes correlation table
-    
     corr_matrix <- stats::cor(as.data.frame(lapply(data2[, colnames(data2) != "ID"],
                                                    as.numeric)), 
                               use = "pairwise.complete.obs")
@@ -457,71 +421,17 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     
     # Exposure summary
     
-    exp_names <- exposure
-    exposure_summary <- data_temp[, exp_names]
-    exposure_summary <- summary(exposure_summary)
+    summarize_var(var = exposure, data = data_temp, format = "wide", sep = sep,
+                  print = verbose, home_dir = home_dir, save = save.out) 
     
-    
-    if (save.out) {
-      k <- knitr::kable(exposure_summary, 
-                        caption = sprintf("Summary of %s Exposure Information",
-                                          exp_long),
-                        format = 'html') 
-      kableExtra::save_kable(k, 
-                             file = file.path(home_dir, 
-                                              sprintf("%s_exposure_info_%s.html",
-                                                      exp_long, d)))
-      if (verbose){
-        
-        cat(sprintf("%s exposure descriptive statistics have now been saved in the home directory. \n",
-                    exp_long))
-        cat("\n")
-      }
-    }
-    if (verbose) {
-      cat(knitr::kable(exposure_summary, 
-                       caption = paste0("Summary of ", exp_long, 
-                                        " Exposure Information"),
-                       format = 'pipe'), sep = "\n")
-      cat("\n")
-      
-    }
     
     
     # Outcome summary
     
-    out_names <- colnames(data_temp)[(grepl(sapply(strsplit(outcome, sep), head, 1), 
-                                            colnames(data_temp)))]
-    outcome_summary <- data_temp[, out_names]
+    summarize_var(var = outcome, data = data_temp, format = "wide", sep = sep,
+                  print = verbose, home_dir = home_dir, save = save.out) 
     
-    if (verbose) {
-      cat(sprintf("Your outcome variable(s) have the following type(s): %s",
-                  paste(class(data_temp[, out_names]), collapse = ", ")))
-      cat("\n")
-    }
-    outcome_summary <- summary(outcome_summary)
-    
-    if (save.out) {
-      k <-  knitr::kable(outcome_summary, 
-                         caption = paste0("Summary of Outcome ",
-                                          sapply(strsplit(outcome, sep), head, 1), 
-                                          " Information"), format = 'html') 
-      kableExtra::save_kable(k, 
-                             file = file.path(home_dir, 
-                                              sprintf("%s_outcome_info_%s.html", 
-                                                      sapply(strsplit(outcome, 
-                                                                      sep), head, 1), d)))
-      if (verbose){
-        cat(sprintf("%s outcome descriptive statistics have now been saved in the home directory. \n",
-                    sapply(strsplit(outcome, sep), head, 1)))
-      }
-    }
-    if (verbose) {
-      cat(knitr::kable(outcome_summary, 
-                       caption = paste0("Summary of Outcome ",
-                                        sapply(strsplit(outcome, sep), head, 1), 
-                                        " Information"), format = 'pipe'),  sep = "\n")
-    }
+  
     
   })
 }

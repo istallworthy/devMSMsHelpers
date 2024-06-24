@@ -17,30 +17,33 @@ inspectData(
 )
 }
 \arguments{
-\item{data}{data in wide format as: a data frame, list of imputed data
-frames, or mids object}
+\item{data}{data in long format or in wide format as: a data frame, list of imputed data
+frames, or \code{mids} object from the \code{mice} package}
+
+\item{obj}{initialized MSM object from \code{\link[=initMSM]{initMSM()}}}
 
 \item{outcome}{name of outcome variable with ".timepoint" suffix}
 
-\item{hi_lo_cut}{(optional) list of two numbers indicating quantile values
+\item{sep}{(optional) delimiter for time integer; must be in regex format,
+e.g., "\\." (default is period)}
+
+\item{hi_lo_cut}{list of two numbers indicating quantile values
 that reflect high and low values, respectively, for continuous exposure
 (default is median split)}
 
-\item{reference}{(optional) list of one or more strings of "-"-separated "l" and "h" values
-indicative of a reference exposure history to which to compare comparison,
-required if comparison is specified}
+\item{reference}{lists of one or more strings of "-"-separated "l"
+and "h" values indicative of a reference exposure history to which to
+compare comparison, required if comparison is supplied}
 
 \item{comparison}{(optional) list of one or more strings of "-"-separated "l"
 and "h" values indicative of comparison history/histories to compare to
-reference, required if reference is specified}
+reference, required if reference is supplied}
 
 \item{verbose}{(optional) TRUE or FALSE indicator for user output (default is
 TRUE)}
 
 \item{save.out}{(optional) TRUE or FALSE indicator to save output and
 intermediary output locally (default is TRUE)}
-
-\item{home_dir}{(optional) path to home directory (required if save.out = TRUE)}
 }
 \value{
 none

@@ -1,20 +1,13 @@
 
 #' Formats long data
+#' 
+#' @inheritParams devMSMHelpers_common_docs
+#' 
 #' @param home_dir path to home directory (required if save.out = TRUE)
 #' @param data dataframe in long format
-#' @param exposure name of exposure variable
-#' @param outcome name of outcome variable with ".timepoint" suffix
-#' @param sep (optional) delimiter for time integer; must be in regex format, 
-#'    e.g., "\\." (default is period)
 #' @param time_var (optional) variable name in original dataset demarcating time
 #' @param id_var (optional) variable name in original dataset demarcating ID
 #' @param missing (optional) indicator for missing data in original dataset
-#' @param factor_confounders (optional) list of variable names that should be made into factors
-#'   (default is numeric)
-#' @param integer_confounders (optional) list of variable names that should be made into integers
-#'   (default is numeric)
-#' @param save.out (optional) TRUE or FALSE indicator to save output and
-#'   intermediary output locally (default is TRUE)
 #' @return formatted long dataset
 #' @export
 #'
@@ -48,29 +41,13 @@ formatLongData <- function(data, exposure, outcome, sep = "\\.", time_var = NA, 
                            factor_confounders = NULL, integer_confounders = NULL, home_dir = NA, save.out = TRUE) {
   
   if (save.out) {
-    if (missing(home_dir)) {
-      stop("Please supply a home directory.", 
-           call. = FALSE)
-    }
-    else if (!is.character(home_dir)) {
-      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
-           call. = FALSE)
-    }
-    else if (!dir.exists(home_dir)) {
-      stop('Please provide a valid home directory.', 
-           call. = FALSE)
-    }
+    dreamerr::check_arg_plus(home_dir, "path dir | NULL",
+                             .message = "Please provide a valid home directory path as a string if you wish to save output locally.")
   }
   
-  if (missing(data)) {
-    stop("Please supply data as either a dataframe with no missing data or imputed data in the form of a mids object or path to folder with imputed csv datasets.",
-         call. = FALSE)
-  }
-  else if (!is.data.frame(data)) {
-    stop("Please provide a long dataset as a data frame.",
-         call. = FALSE)
-  }
-  
+  dreamerr::check_arg(data, "data.frame",
+                      .message = "Please provide a long dataset as a data frame." )
+
   if (is.na(time_var) && !"WAVE" %in% colnames(data)) {
     stop("Please provide a long dataset with a time variable WAVE or specify the time-variable input.",
          call. = FALSE)
@@ -80,62 +57,34 @@ formatLongData <- function(data, exposure, outcome, sep = "\\.", time_var = NA, 
          call. = FALSE)
   }  
   
-  if (missing(exposure)) {
-    stop("Please supply a single exposure.", 
-         call. = FALSE)
-  } 
-  else if (!is.character(exposure)) {
-    stop("Please supply a exposure as a list of characters.", 
-         call. = FALSE)
-  }
-  else if (sum(unlist(lapply(exposure, function(x){grepl(sep, x)}))) != length(exposure)) {
+  dreamerr::check_arg(exposure, "vector character len(1, )")
+  
+  if (sum(unlist(lapply(exposure, function(x){grepl(sep, x)}))) != length(exposure)) {
     stop("Please supply exposures variables with time suffixes. You can specify a delimiiter in 'sep'.",
          call. = FALSE)
   }
   
-  if (missing(outcome)) {
-    stop("Please supply a single outcome.", 
-         call. = FALSE)
-  }
-  else if (!is.character(outcome) || length(outcome) != 1) {
-    stop("Please supply a single outcome as a character.", 
-         call. = FALSE)
-  }
-  else if (!grepl(sep, outcome)) {
+  dreamerr::check_arg(outcome, "vector character len(1, )")
+  
+  if (!grepl(sep, outcome)) {
     stop("Please supply an outcome variable with a time suffix with the outcome time point such that it matches the variable name in your wide data",
          call. = FALSE)
   }
   
-  if (!is.null(factor_confounders)) {
-    if (!is.character(factor_confounders)) {
-      stop("Please supply a list of character strings of confounders to make factors.",
-           call. = FALSE)
-    }
-    else if (any(!factor_confounders %in% names(data))) {
-      stop("Please only include factor confounder present in your data.",
-           call. = FALSE)
-    }
+  dreamerr::check_arg(factor_confounders, "vector character | NULL",
+                      .message = "Please supply a list of character strings of confounders to make factors.")
+  
+  dreamerr::check_arg(integer_confounders, "vector character | NULL",
+                      .message = "Please supply a list of character strings of confounders to make integers.")
+  
+  
+  dreamerr::check_arg(save.out, "scalar logical | scalar character")
+  
+  if (save.out) {
+    dreamerr::check_arg_plus(home_dir, "path dir | NULL",
+                             .message = "Please provide a valid home directory path as a string if you wish to save output locally.")
   }
   
-  if (!is.null(integer_confounders)) {
-    if (!is.character(integer_confounders)) {
-      stop("Please supply a list of character strings of confounders to make integer.",
-           call. = FALSE)
-    }
-    else if (any(!integer_confounders %in% names(data))) {
-      stop("Please only include integer confounder present in your data.",
-           call. = FALSE)
-    }
-  }
-  
-  if (!is.logical(save.out)) {
-    stop("Please set save.out to either TRUE or FALSE.", 
-         call. = FALSE)
-  }
-  else if (length(save.out) != 1) {
-    stop("Please provide a single TRUE or FALSE value to save.out.", 
-         call. = FALSE)
-  }
   
   exposure_time_pts <- .extract_time_pts_from_vars(exposure, sep = sep)
   if (any(is.na(exposure_time_pts))) {
@@ -163,121 +112,34 @@ formatLongData <- function(data, exposure, outcome, sep = "\\.", time_var = NA, 
   
   
   # Exposure summary
-  
-  exposure_summary <- data[data$WAVE %in% exposure_time_pts, , drop = FALSE]
-  exp_names <- sapply(strsplit(exposure[1], sep), head, 1)
-  
-  exposure_summary <- stats::aggregate(stats::as.formula(paste(exp_names, 
-                                                               "WAVE", sep = " ~ ")), 
-                                       data = exposure_summary,
-                                       FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
-  exposure_summary <- do.call(data.frame, exposure_summary)
-  colnames(exposure_summary) <- c("WAVE", "mean", "sd", "min", "max")
-  
-  cat(knitr::kable(exposure_summary, 
-                   caption = sprintf("Summary of %s Exposure Information", 
-                                     exp_names),
-                   format = 'pipe'), sep = "\n")
-  cat("\n")
-  
-  if (save.out) {
-    k <-  knitr::kable(exposure_summary, 
-                       caption = sprintf("Summary of %s Exposure Information", 
-                                         exposure),
-                       format = 'html')
+  summarize_var(var = exposure, data = data, format = "long", sep = sep,
+                exposure_time_pts = exposure_time_pts, print = TRUE, 
+                home_dir = home_dir, save = save.out) 
     
-    kableExtra::save_kable(k, 
-                           file = file.path(home_dir, paste0(exp_names, 
-                                                             "_exposure_info.html")))
-    cat(paste0(exp_names, 
-               " exposure descriptive statistics have now been saved in the home directory"), "\n")
-    cat("\n")
-  }
-  
-  
   # Outcome summary
-  
-  outcome_summary <- data #as.data.frame(data[, colnames(data)[colnames(data) %in% sapply(strsplit(outcome, "\\."),"[", 1)]])
-  out_names <- colnames(outcome_summary)[(grepl(sapply(strsplit(outcome, sep),"[", 1), 
-                                                colnames(outcome_summary)))]
-  out_names <- out_names[!out_names %in% "WAVE"]
-  
-  outcome_summary <- aggregate(as.formula(paste(out_names, "WAVE", sep = " ~ ")), 
-                               data = outcome_summary,
-                               FUN = function(x) c(mean(x, na.rm = TRUE), 
-                                                   sd(x, na.rm = TRUE), 
-                                                   min(x, na.rm = TRUE), 
-                                                   max(x, na.rm = TRUE)))
-  outcome_summary <- do.call(data.frame, outcome_summary)
-  colnames(outcome_summary) <- c("WAVE", "mean", "sd", "min", "max")
-  
-  cat(knitr::kable(outcome_summary, 
-                   caption = paste0("Summary of Outcome ", outcome, 
-                                    " Information"),
-                   format = 'pipe'), sep = "\n")
-  cat("\n")
-  
-  if (save.out) {
-    k <-  knitr::kable(outcome_summary, 
-                       caption = paste0("Summary of Outcome ", outcome, 
-                                        " Information"), 
-                       format = 'html') 
-    kableExtra::save_kable(k, 
-                           file = file.path(home_dir, paste0(outcome, 
-                                                             "_outcome_info.html")))
-    
-    cat(paste0(outcome, 
-               " outcome descriptive statistics have now been saved in the home directory"), "\n")
-  }
+  summarize_var(var = outcome, data = data, format = "wide", sep = sep,
+                print = TRUE, 
+                home_dir = home_dir, save = save.out) 
   
   
   #check for character variables
-  
   if(any(sapply(data, class) == "character")) {
     warning(sprintf("The following variables are characters. Please change them to integers and re-run: %s",
                     paste(names(data)[sapply(data, class) == "character"], sep = ",")))
   }
   
   
+   # Formatting 
   data$ID <- as.numeric(data$ID)
   
-  numeric_vars <- names(data)
+  data <- format_var(data, "factor", factor_confounders)
   
-  # Formatting factor covariates
+  data <- format_var(data, "integer", integer_confounders)
   
-  if (!is.null(factor_confounders)) {
-    if (!all(factor_confounders %in% colnames(data))) {
-      stop ('Please provide factor covariates that correspond to columns in your data.',
-            call. = FALSE)
-    }
+  # make rest numeric
+  numeric_confounders <- names(data)[!names(data) %in% c(factor_confounders, integer_confounders)]
     
-    data[, factor_confounders] <- as.data.frame(lapply(data[, factor_confounders], 
-                                                       as.factor))
-    
-    numeric_vars <- numeric_vars[!numeric_vars %in% c(factor_confounders)]
-    
-  }
-  
-  
-  # Formatting integer covariates
-  
-  if (!is.null(integer_confounders)) {
-    if (!all(integer_confounders %in% colnames(data))) {
-      stop ('Please provide integer covariates that correspond to columns in your data.',
-            call. = FALSE)
-    }
-    
-    data[, integer_confounders] <- as.data.frame(lapply(data[, integer_confounders], 
-                                                        as.integer))
-    
-    numeric_vars <- numeric_vars[!numeric_vars %in% c(integer_confounders)]
-    
-  }
-  
-  
-  # Formatting numeric covariates
-  
-  data[, numeric_vars] <- lapply(data[, numeric_vars], as.numeric)
+  data <- format_var(data, "numeric", numeric_confounders)
   
   
   as.data.frame(data)

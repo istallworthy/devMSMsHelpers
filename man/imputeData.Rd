@@ -16,17 +16,20 @@ imputeData(
   para_proc = TRUE,
   seed = NA,
   home_dir = NA,
-  read_imps_from_file = FALSE,
+  read_in = FALSE,
   save.out = TRUE,
   ...
 )
 }
 \arguments{
-\item{data}{data in wide format}
+\item{data}{single data frame of data in wide format with missingness MAR}
 
 \item{exposure}{name of exposure variable}
 
 \item{outcome}{name of outcome variable with ".timepoint" suffix}
+
+\item{sep}{(optional) delimiter for time integer; must be in regex format,
+e.g., "\\." (default is period)}
 
 \item{m}{(optional) integer number of imputed datasets (default is 5)}
 
@@ -42,7 +45,7 @@ using multiple cores to speed up process (default = TRUE)}
 
 \item{home_dir}{path to home directory (required if save.out = TRUE)}
 
-\item{read_imps_from_file}{(optional) TRUE or FALSE indicator to read in weights
+\item{read_in}{(optional) TRUE or FALSE indicator to read in weights
 that have been previously run and saved locally (default is FALSE)}
 
 \item{save.out}{(optional) TRUE or FALSE indicator to save output and
@@ -83,7 +86,7 @@ i <- imputeData(data = t_m,
                 exposure = c("A.1", "A.2", "A.3"),
                 outcome = "D.3",
                 para_proc = TRUE,
-                read_imps_from_file = FALSE,
+                read_in = FALSE,
                 save.out = FALSE)
 \dontshow{\}) # examplesIf}
 }

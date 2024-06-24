@@ -38,7 +38,9 @@ e.g., "\\." (default is period)}
 (default is numeric)}
 
 \item{integer_confounders}{(optional) list of variable names that should be made into integers
-(default is numeric)}
+(default is numeric)
+
+@keywords internal}
 
 \item{home_dir}{path to home directory (required if save.out = TRUE)}
 
