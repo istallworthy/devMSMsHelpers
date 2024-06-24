@@ -1,5 +1,67 @@
 # utils ----
 
+#' Format variables
+#' @keywords internal
+format_var <- function(data, type, vars){
+  convert <- function(col, type) {
+    if (type == "factor") {
+      return(as.factor(col))
+    } else if (type == "numeric") {
+      return(as.numeric(col))
+    } else if (type == "integer") {
+      return(as.integer())
+    } else
+      return(col)
+    }
+  
+  if (!all(vars %in% colnames(data))) {
+    stop (sprintf('Please provide %s covariates that correspond to columns in your data.', type),
+          call. = FALSE)
+  }
+  # data[, vars] <- as.data.frame(unlist(lapply(data[, vars], as.factor)))
+  data[, vars] <- as.data.frame(mapply(convert, data[, vars], type, SIMPLIFY = FALSE))
+  
+  return(data)
+}
+
+
+
+#' Summarize variable
+#' @keywords internal
+summarize_var <- function(var, data, format, sep, exposure_time_pts = NULL, print = TRUE, home_dir = NULL, save = TRUE) {
+  if (format == "long") {
+    exp_names <- sapply(strsplit(var[1], sep), head, 1)
+    exposure_summary <- data[, c("WAVE", exp_names)]
+    exposure_summary <- stats::aggregate(stats::as.formula(paste(exp_names, "WAVE", sep = " ~ ")), 
+                                         data = exposure_summary,
+                                         FUN = function(x) c(mean(x), sd(x), min(x), max(x)))
+    exposure_summary <- do.call(data.frame, exposure_summary)
+    colnames(exposure_summary) <- c("WAVE", "mean", "sd", "min", "max")
+  } else {
+    exp_names <- var
+    exposure_summary <- data[, exp_names]
+    exposure_summary <- summary(exposure_summary)
+    if (length(class(exposure_summary)) == 1) {
+      exposure_summary <- list(exposure_summary)
+    } else if ("summaryDefault" %in% class(exposure_summary)){
+      exposure_summary <- as.list(exposure_summary)
+      exposure_summary <- do.call(data.frame, exposure_summary)
+    }
+  }
+  if (save) {
+    k <- knitr::kable(exposure_summary,caption = sprintf("Summary of %s Information", var),
+                      format = 'html')
+    kableExtra::save_kable(k, file = file.path(home_dir, sprintf("%s_info.html", var)))
+    cat(paste0(var, " descriptive statistics have now been saved in the home directory"), "\n")
+  }
+  if (print) {
+    cat(knitr::kable(exposure_summary, caption = sprintf("Summary of %s Information", var), format = 'pipe'), sep = "\n")
+    cat("\n")
+  }
+
+}
+  
+  
 #' Adaptation of gtools::permutations(2, repeats.allowed = TRUE)
 #' @keywords internal
 perm2 <- function(r, v) {

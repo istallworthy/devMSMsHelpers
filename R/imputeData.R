@@ -1,24 +1,21 @@
 #' Imputes dataset so there is no missing at each time point using parallel
 #' processing to speed up
 #'
+#' @inheritParams devMSMHelpers_common_docs
+#'
 #' @export
 #' @importFrom doRNG %dorng%
 #' @seealso {[mice::mice()],
 #'   <https://cran.r-project.org/web/packages/mice/index.html>}
-#' @param data data in wide format
+#' @param data single data frame of data in wide format with missingness MAR
 #' @param m (optional) integer number of imputed datasets (default is 5)
 #' @param method (optional) character string of imputation method from mice()
 #'   (default is random forest "rf")
-#' @param home_dir path to home directory (required if save.out = TRUE)
-#' @param exposure name of exposure variable
-#' @param outcome name of outcome variable with ".timepoint" suffix
 #' @param maxit (optional) maximum number of iterations in mice (default is 5)
 #' @param para_proc (optional) TRUE/FALSE whether to do parallel processing
 #'   using multiple cores to speed up process (default = TRUE)
 #' @param seed (optional) integer to set seed for reproducibility (default is NA)
-#' @param save.out (optional) TRUE or FALSE indicator to save output and
-#'   intermediary output locally (default is TRUE)
-#' @param read_imps_from_file (optional) TRUE or FALSE indicator to read in weights
+#' @param read_in (optional) TRUE or FALSE indicator to read in weights
 #'   that have been previously run and saved locally (default is FALSE)
 #' @param ... any argument used by mice::mice()
 #' @return mice object of m imputed datasets
@@ -48,59 +45,32 @@
 #'                 exposure = c("A.1", "A.2", "A.3"),
 #'                 outcome = "D.3",
 #'                 para_proc = TRUE,
-#'                 read_imps_from_file = FALSE,
+#'                 read_in = FALSE,
 #'                 save.out = FALSE)
 
-imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA, maxit = NA, para_proc = TRUE, seed = NA,
-                       home_dir = NA, read_imps_from_file = FALSE, save.out = TRUE, ...) {
+imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA, 
+                       maxit = NA, para_proc = TRUE, seed = NA,
+                       home_dir = NA, read_in = FALSE, save.out = TRUE, ...) {
   
-  if (save.out || read_imps_from_file) {
-    if (missing(home_dir)) {
-      stop("Please supply a home directory.", 
-           call. = FALSE)
-    }
-    else if (!is.character(home_dir)) {
-      stop("Please provide a valid home directory path as a string if you wish to save output locally.", 
-           call. = FALSE)
-    }
-    else if (!dir.exists(home_dir)) {
-      stop('Please provide a valid home directory.', 
-           call. = FALSE)
-    }
+  if (save.out || read_in) {
+    dreamerr::check_arg_plus(home_dir, "path dir | NULL",
+                             .message = "Please provide a valid home directory path as a string if you wish to save output locally.")
   }
   
-  if (missing(data)) {
-    stop("Please supply data as a data frame in wide format.",
-         call. = FALSE)
-  }
-  else if (!is.data.frame(data)) {
-    stop("Please supply data as a data frame in wide format.",
-         call. = FALSE)
-  }
+    dreamerr::check_arg(data, "data.frame",
+                        .message = "Please provide a wide dataset as a data frame." )
   
-  if (missing(exposure)) {
-    stop("Please supply a single exposure.", 
-         call. = FALSE)
-  }
-  else if (!is.character(exposure)) {
-    stop("Please supply exposure as a character.", 
-         call. = FALSE)
-  }
-  else if (sum(unlist(lapply(exposure, 
+    dreamerr::check_arg(exposure, "vector character len(1, )")
+    
+  if (sum(unlist(lapply(exposure, 
                              function(x){grepl(sep, x)}))) != length(exposure)) {
     stop("Please supply exposures variables with time suffixes. You can specify a delimiiter in 'sep'.",
          call. = FALSE)
   }
   
-  if (missing(outcome)) {
-    stop("Please supply a single outcome.", 
-         call. = FALSE)
-  }
-  else if (!is.character(outcome) || length(outcome) != 1) {
-    stop("Please supply a single outcome as a character.", 
-         call. = FALSE)
-  }
-  
+  dreamerr::check_arg(outcome, "vector character len(1, )")
+    
+
   if ((!is.character(method) && !is.na(method)) || length(method) != 1) {
     stop("Please provide as a character a valid imputation method abbreviation.", 
          call. = FALSE)
@@ -125,42 +95,18 @@ imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA
     maxit <- 5
   }
   
-  if (!is.logical(para_proc)) {
-    stop("Please set save.out to either TRUE or FALSE.", 
-         call. = FALSE)
-  }
-  if (length(para_proc) != 1) {
-    stop("Please provide a single TRUE or FALSE value to save.out.", 
-         call. = FALSE)
-  }
+  dreamerr::check_arg(save.out, "scalar logical")
+  
   if (para_proc) {
     rlang::check_installed(c("doParallel", "foreach", "doRNG"))
   }
   
-  if (length(seed) != 1) {
-    stop("If you wish to set a seed for reproducibility, please provide a single integer value.",
-         call. = FALSE)
-  }
+  dreamerr::check_arg(set.seed, "scalar integer | NA")
   
-  if (!is.logical(read_imps_from_file)) {
-    stop("Please set save.out to either TRUE or FALSE.", 
-         call. = FALSE)
-  }
-  if (length(read_imps_from_file) != 1) {
-    stop("Please provide a single TRUE or FALSE value to save.out.", 
-         call. = FALSE)
-  }
+  dreamerr::check_arg(read_in, "scalar logical")
   
-  if (!is.logical(save.out)) {
-    stop("Please set save.out to either TRUE or FALSE.", 
-         call. = FALSE)
-  }
-  if (length(save.out) != 1) {
-    stop("Please provide a single TRUE or FALSE value to save.out.", 
-         call. = FALSE)
-  }
   
-  if (save.out || read_imps_from_file) {
+  if (save.out || read_in) {
     imp_dir <- file.path(home_dir, "imputations")
     if (!dir.exists(imp_dir)) {
       dir.create(imp_dir)
@@ -170,17 +116,15 @@ imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA
   exp_long <- sapply(strsplit(exposure[1], sep), head, 1)
   
   
-  if (read_imps_from_file ) {
+  if (read_in ) {
     imputed_datasets <- list()
     
     if (!file.exists(file.path(home_dir, "imputations", 
                                sprintf("%s-%s_all_imp.rds",
                                        exp_long, outcome)))) {
-      
-      stop("Imputations have not been created and saved locally. Please set 'read_imps_from_file' == 'FALSE' and re-run.", 
+      stop("Imputations have not been created and saved locally. Please set 'read_in' == 'FALSE' and re-run.", 
            call. = FALSE)
     }
-    
     
     imp <- readRDS(file.path(home_dir, "imputations", 
                              sprintf("%s-%s_all_imp.rds",
@@ -202,7 +146,6 @@ imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA
                       imp$method[3]),
               call. = FALSE)
     }
-    
     
     imputed_datasets <- imp
     
@@ -253,7 +196,6 @@ imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA
       
       # Conducts imputations using parallelized execution cycling through m
       imputed_datasets <- foreach::foreach(i = seq_len(m), .combine = mice::ibind) %dorng% {
-  
       
         cat("### Started iteration", i, "\n")
         
@@ -276,7 +218,6 @@ imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA
                                      print = F,
                                      seed = seed,
                                      ...)
-      # summary(mice::complete(imputed_datasets, 1))
     }
     
     if (!is.na(seed)) {
@@ -305,7 +246,6 @@ imputeData <- function(data, exposure, outcome, sep = "\\.", m = NA, method = NA
       # Save out individual imputed datasets
       
       for (k in seq_len(m)) {
-        
         
         csv_file <- file.path(home_dir, "imputations", 
                               sprintf("%s-%s_imp%s.csv", 
