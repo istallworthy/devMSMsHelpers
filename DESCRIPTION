@@ -34,7 +34,9 @@ Imports:
     ranger,
     stats,
     doRNG,
-    devMSMs
+    devMSMs,
+    dreamerr,
+    ranger
 Suggests:
     missMethods,
     doParallel,

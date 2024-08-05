@@ -41,5 +41,5 @@ NULL
 #'   
 #'  @keywords internal
 devMSMHelpers_common_docs <- function(data, obj, sep, exposure, outcome, factor_confounders, integer_confounders, hi_lo_cut, reference, comparison,
-                                      verbose, ave.out, home_dir) {}
+                                      verbose, save.out, home_dir) {}
 
