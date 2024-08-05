@@ -9,7 +9,7 @@ format_var <- function(data, type, vars){
     } else if (type == "numeric") {
       return(as.numeric(col))
     } else if (type == "integer") {
-      return(as.integer())
+      return(as.integer(col))
     } else
       return(col)
     }
@@ -19,7 +19,14 @@ format_var <- function(data, type, vars){
           call. = FALSE)
   }
   # data[, vars] <- as.data.frame(unlist(lapply(data[, vars], as.factor)))
-  data[, vars] <- as.data.frame(mapply(convert, data[, vars], type, SIMPLIFY = FALSE))
+  # data[, vars] <- as.data.frame(mapply(convert, data[, vars], type, SIMPLIFY = FALSE))
+  # data[, vars] <- as.data.frame(Map(convert, data[, vars], type))
+  
+  transformed_columns <- lapply(seq_along(vars), function(i) convert(data[[vars[i]]], type))
+  
+  for (i in seq_along(vars)) {
+    data[[vars[i]]] <- transformed_columns[[i]]
+  }
   
   return(data)
 }
@@ -28,9 +35,17 @@ format_var <- function(data, type, vars){
 
 #' Summarize variable
 #' @keywords internal
-summarize_var <- function(var, data, format, sep, exposure_time_pts = NULL, print = TRUE, home_dir = NULL, save = TRUE) {
+summarize_var <- function(var, data, format, sep, exposure_time_pts = NULL, 
+                          print = TRUE, home_dir = NULL, save = TRUE) {
+  if (length(var) > 1) {
+    if (any(!var %in% names(data))){
+      exp_names <- sapply(strsplit(var[1], sep), head, 1)
+    } else {exp_names <- var}
+  } else {
+    exp_names <- var
+  }
+  
   if (format == "long") {
-    exp_names <- sapply(strsplit(var[1], sep), head, 1)
     exposure_summary <- data[, c("WAVE", exp_names)]
     exposure_summary <- stats::aggregate(stats::as.formula(paste(exp_names, "WAVE", sep = " ~ ")), 
                                          data = exposure_summary,
@@ -38,7 +53,6 @@ summarize_var <- function(var, data, format, sep, exposure_time_pts = NULL, prin
     exposure_summary <- do.call(data.frame, exposure_summary)
     colnames(exposure_summary) <- c("WAVE", "mean", "sd", "min", "max")
   } else {
-    exp_names <- var
     exposure_summary <- data[, exp_names]
     exposure_summary <- summary(exposure_summary)
     if (length(class(exposure_summary)) == 1) {
@@ -48,14 +62,20 @@ summarize_var <- function(var, data, format, sep, exposure_time_pts = NULL, prin
       exposure_summary <- do.call(data.frame, exposure_summary)
     }
   }
+  if (length(exp_names) > 1){
+    exp_names <- sapply(strsplit(var[1], sep), head, 1)
+  }
   if (save) {
-    k <- knitr::kable(exposure_summary,caption = sprintf("Summary of %s Information", var),
+    k <- knitr::kable(exposure_summary, 
+                      caption = sprintf("Summary of %s Information", exp_names),
                       format = 'html')
-    kableExtra::save_kable(k, file = file.path(home_dir, sprintf("%s_info.html", var)))
+    kableExtra::save_kable(k, file = file.path(home_dir, sprintf("%s_info.html", exp_names)))
     cat(paste0(var, " descriptive statistics have now been saved in the home directory"), "\n")
   }
   if (print) {
-    cat(knitr::kable(exposure_summary, caption = sprintf("Summary of %s Information", var), format = 'pipe'), sep = "\n")
+    cat(knitr::kable(exposure_summary, 
+                     caption = sprintf("Summary of %s Information", exp_names), 
+                     format = 'pipe'), sep = "\n")
     cat("\n")
   }
 
@@ -127,7 +147,8 @@ perm2 <- function(r, v) {
   
   var_tab <- data.frame(
     var = c(exposure, tv_conf, ti_conf),
-    type = c(rep("exposure", length(exposure)), rep("tv_conf", length(tv_conf)), rep("ti_conf", length(ti_conf))),
+    type = c(rep("exposure", length(exposure)), 
+             rep("tv_conf", length(tv_conf)), rep("ti_conf", length(ti_conf))),
     time = c(exposure_time_pts, tv_conf_time_pts, rep(-1, length(ti_conf)))
   )
   return(var_tab)

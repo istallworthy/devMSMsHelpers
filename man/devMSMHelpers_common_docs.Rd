@@ -16,7 +16,7 @@ devMSMHelpers_common_docs(
   reference,
   comparison,
   verbose,
-  ave.out,
+  save.out,
   home_dir
 )
 }
@@ -56,10 +56,10 @@ reference, required if reference is supplied}
 \item{verbose}{(optional) TRUE or FALSE indicator for user output (default is
 TRUE)}
 
-\item{home_dir}{path to home directory (required if save.out = TRUE)}
-
 \item{save.out}{(optional) TRUE or FALSE indicator to save output and
 intermediary output locally (default is TRUE)}
+
+\item{home_dir}{path to home directory (required if save.out = TRUE)}
 }
 \description{
 Common documentation for devMSMs helper functions

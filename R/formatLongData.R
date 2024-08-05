@@ -117,7 +117,7 @@ formatLongData <- function(data, exposure, outcome, sep = "\\.", time_var = NA, 
                 home_dir = home_dir, save = save.out) 
     
   # Outcome summary
-  summarize_var(var = outcome, data = data, format = "wide", sep = sep,
+  summarize_var(var = outcome, data = data, format = "long", sep = sep,
                 print = TRUE, 
                 home_dir = home_dir, save = save.out) 
   
