@@ -37,13 +37,11 @@ format_var <- function(data, type, vars){
 #' @keywords internal
 summarize_var <- function(var, data, format, sep, exposure_time_pts = NULL, 
                           print = TRUE, home_dir = NULL, save = TRUE) {
-  if (length(var) > 1) {
+
     if (any(!var %in% names(data))){
       exp_names <- sapply(strsplit(var[1], sep), head, 1)
     } else {exp_names <- var}
-  } else {
-    exp_names <- var
-  }
+
   
   if (format == "long") {
     exposure_summary <- data[, c("WAVE", exp_names)]
