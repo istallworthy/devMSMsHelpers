@@ -48,7 +48,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
   
   # Extract var_tab and get variables
   
-  var_tab <- attr(obj, "var_tab")
+  var_tab <- obj[["var_tab"]]
   ti_confounders <- var_tab$var[var_tab$type == "ti_conf"]
   ti_conf_time <- var_tab$time[var_tab$type == "ti_conf"]
   tv_confounders <- var_tab$var[var_tab$type == "tv_conf"]
@@ -56,13 +56,14 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
   tv_conf_time <- tv_conf_time - 0.01 * var_tab$concur_conf[var_tab$type == "tv_conf"]
   exposure <- var_tab$var[var_tab$type == "exposure"]
   exposure_time_pts <- var_tab$time[var_tab$type == "exposure"]
-  epoch <- attr(obj, "epoch")
+  epoch <- obj[["epoch"]]
+  
   home_dir <- attr(obj, "home_dir")
   
   dreamerr::check_arg(hi_lo_cut, "NULL | vector numeric len(2) GE{0} LE{1}")
 
 
-  exposure_type <- attr(obj, "exposure_type")
+  exposure_type <- obj[["exposure_type"]]
   
   exp_long <- sapply(strsplit(exposure[1], sep), head, 1)
   
