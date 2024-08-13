@@ -65,6 +65,10 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
 
   exposure_type <- obj[["exposure_type"]]
   
+  if (is.null(hi_lo_cut) && exposure_type == "continuous"){
+    stop("Please provide high/low cutoffs for continous exposures.", call. = FALSE)
+  }
+  
   exp_long <- sapply(strsplit(exposure[1], sep), head, 1)
   
   n_epoch <- length(unique(epoch))
@@ -134,10 +138,12 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     to = length(data)
   }
   
+
   # evaluating histories
   
   lapply(1:to, function(d) {
     
+
     if (length(data) > 1){
       message(sprintf("Imputation %s", d))
     }
@@ -282,16 +288,16 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
                             sprintf("%s-%s_covariates_considered_by_time_pt_%s.html",
                                     exp_long, outcome, d))
       
-      # utils::write.csv(tt::tt(covar_table), file = csv_file)
-      # if (fs::path_ext(out) == "pdf") {
-      #   tinytable::save_tt(
-      #     tinytable::format_tt(covar_table, escape = TRUE),
-      #     output = csv_file , overwrite = TRUE
-      #   )
-      # } else {
+      utils::write.csv(tinytable::tt(covar_table), file = csv_file)
+      if (fs::path_ext(out) == "pdf") {
+        tinytable::save_tt(
+          tinytable::format_tt(covar_table, escape = TRUE),
+          output = csv_file , overwrite = TRUE
+        )
+      } else {
         tinytable::save_tt(covar_table, output = csv_file, overwrite = TRUE)
     }
-    #   }
+   }
     # }
     # }
     
@@ -309,11 +315,18 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     rownames(test) <- exposure_time_pts
     
     for (l in seq_len(nrow(test))) {
-      z <- c(sapply(strsplit(all_potential_covariates[grepl(paste0(".", rownames(test)[l]),
-                                                            all_potential_covariates)], 
-                             sep), head, 1), ti_confounders)
-      z <- z[!duplicated(z)]
-      test[l, z ] <- 1
+      if (any(grepl(paste0(".", rownames(test)[l]),
+                    all_potential_covariates))) {
+        if (l == nrow(test)){
+          warning(sprintf("Confounders at this final time point, %s, will not be included in balancing formulas unless the user lists them in `concur_conf` in initSMS().",
+                          call. = FASE))
+        }
+        z <- c(sapply(strsplit(all_potential_covariates[grepl(paste0(".", rownames(test)[l]),
+                                                              all_potential_covariates)], 
+                               sep), head, 1), ti_confounders)
+        z <- z[!duplicated(z)]
+        test[l, z ] <- 1
+      }
     }
     
     test <- test[, colnames(test)[!(colnames(test) %in% c("ID"))]]
