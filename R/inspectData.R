@@ -58,7 +58,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
   exposure_time_pts <- var_tab$time[var_tab$type == "exposure"]
   epoch <- obj[["epoch"]]
   
-  home_dir <- attr(obj, "home_dir")
+  home_dir <- obj[["home_dir"]]
   
   dreamerr::check_arg(hi_lo_cut, "NULL | vector numeric len(2) GE{0} LE{1}")
 
@@ -288,15 +288,15 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
                             sprintf("%s-%s_covariates_considered_by_time_pt_%s.html",
                                     exp_long, outcome, d))
       
-      utils::write.csv(tinytable::tt(covar_table), file = csv_file)
-      if (fs::path_ext(out) == "pdf") {
-        tinytable::save_tt(
-          tinytable::format_tt(covar_table, escape = TRUE),
-          output = csv_file , overwrite = TRUE
-        )
-      } else {
-        tinytable::save_tt(covar_table, output = csv_file, overwrite = TRUE)
-    }
+      utils::write.csv(tinytable::format_tt(covar_table), file = csv_file)
+      # if (fs::path_ext(out) == "pdf") {
+      #   tinytable::save_tt(
+      #     tinytable::format_tt(covar_table, escape = TRUE),
+      #     output = csv_file , overwrite = TRUE
+      #   )
+      # } else {
+      #   tinytable::save_tt(tinytable::format_tt(covar_table, escape = TRUE), output = csv_file, overwrite = TRUE)
+    
    }
     # }
     # }
@@ -342,7 +342,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
                                     exp_long, outcome, d))
       
       # utils::write.csv(test, file = csv_file)
-      tinytable::save_tt(test, output = csv_file, overwrite = TRUE)
+      tinytable::save_tt(tinytable::tt(tinytable::format_tt(test)), output = csv_file, overwrite = TRUE)
       
       
       if (verbose) {
