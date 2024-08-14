@@ -72,6 +72,7 @@ obj <- initMSM(
 inspectData(data = test,
             obj = obj, 
             outcome = "D.3",
+            hi_lo_cut = c(0.8, 0.2),
             save.out = FALSE)
 inspectData(data = test,
             obj = obj,
