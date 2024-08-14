@@ -26,6 +26,7 @@
 #' inspectData(data = test,
 #'             obj = obj, 
 #'             outcome = "D.3",
+#'             hi_lo_cut = c(0.8, 0.2),
 #'             save.out = FALSE)
 #' inspectData(data = test,
 #'             obj = obj,
@@ -319,7 +320,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
                     all_potential_covariates))) {
         if (l == nrow(test)){
           warning(sprintf("Confounders at this final time point, %s, will not be included in balancing formulas unless the user lists them in `concur_conf` in initSMS().",
-                          call. = FASE))
+                          call. = FALSE))
         }
         z <- c(sapply(strsplit(all_potential_covariates[grepl(paste0(".", rownames(test)[l]),
                                                               all_potential_covariates)], 
