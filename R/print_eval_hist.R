@@ -21,7 +21,19 @@ print_eval_hist <- function(epoch_history, epoch, hi_lo_cut, reference = NULL, c
   
   if (!is.null(reference) && !is.null(comparison)) {
     keep_idx <- epoch_history_tab$epoch_history %in% c(reference, comparison)
+    
+    if (!any(keep_idx)){
+      stop("There are no participants in your sample with the reference/comparison histories you specified, using high/low cutoff (if applicable).", .call = FALSE)
+    }
+    
     epoch_history_tab <- epoch_history_tab[keep_idx, , drop = FALSE]
+    
+    if (any(!c(reference, comparison) %in% epoch_history_tab$epoch_history)){
+      stop(sprintf("There are no participants in your sample in the following histories: %s. 
+                   Please revise your reference/comparison histories and/or the high/low cutoffs, if applicable.",
+                   paste(c(reference, comparison)[!c(reference,comparison) %in% epoch_history_tab$epoch_history], collapse = ", ")),
+           .call = FALSE)
+    }
   }
   n_included <- sum(epoch_history_tab$n)
   n_included_hist <- nrow(epoch_history_tab)

@@ -4,7 +4,7 @@
 \alias{.characterize_exposure}
 \title{Used in \code{assessBalance} to define history}
 \usage{
-.characterize_exposure(mat, exposure_type)
+.characterize_exposure(mat, exposure_type, hi_lo_cut)
 }
 \description{
 Used in \code{assessBalance} to define history

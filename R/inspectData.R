@@ -26,17 +26,17 @@
 #' inspectData(data = test,
 #'             obj = obj, 
 #'             outcome = "D.3",
-#'             hi_lo_cut = c(0.8, 0.2),
+#'             hi_lo_cut = c(0.6, 0.4),
 #'             save.out = FALSE)
 #' inspectData(data = test,
 #'             obj = obj,
 #'             outcome = "D.3",
-#'             hi_lo_cut = c(0.8, 0.2),
+#'             hi_lo_cut = c(0.6, 0.4),
 #'             save.out = FALSE)
 #' inspectData(data = test,
 #'             obj = obj, 
 #'             outcome = "D.3",
-#'             hi_lo_cut = c(0.8, 0.2),
+#'             hi_lo_cut = c(0.6, 0.4),
 #'             reference = "l-l-l",
 #'             comparison = "h-h-h",
 #'             save.out = FALSE)
@@ -143,8 +143,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
   # evaluating histories
   
   lapply(1:to, function(d) {
-    
-
+  
     if (length(data) > 1){
       message(sprintf("Imputation %s", d))
     }
@@ -169,7 +168,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     }
     
     mat <- data_temp[, epoch_vars]
-    epoch_history <- .characterize_exposure(mat, exposure_type)
+    epoch_history <- .characterize_exposure(mat, exposure_type, hi_lo_cut)
     
     if (verbose) {
       print_eval_hist(epoch_history, epoch, hi_lo_cut, reference, comparison)
@@ -221,8 +220,6 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
       is.logical(exp1) || all(exp1 %in% c(0, 1), na.rm = TRUE),
       "binary", "continuous"
     )
-    
-  
     
     # checking any tv outcome < outcome time pt listed as tv confounder 
     
@@ -403,7 +400,7 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
     
     #covariate correlations
     
-    covariates_to_include <- c(all_potential_covariates)
+    covariates_to_include <- c(all_potential_covariates, exposure)
     covariates_to_include <- covariates_to_include[order(covariates_to_include)]
     variables_to_include <- unique(c(outcome, covariates_to_include, tv_confounders))
     data2 <- data_temp[, c("ID", variables_to_include)]
@@ -431,7 +428,6 @@ inspectData <- function (data, obj, outcome, sep = "\\.", hi_lo_cut = NULL,
         cat("\n")
       }
     }
-    
     
     
     # Exposure summary
