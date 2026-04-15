@@ -43,7 +43,7 @@ Suggests:
     foreach,
     rmarkdown
 Remotes: 
-    gitHub::istallworthy/devMSMs
+    github::istallworthy/devMSMs
 Import: 
     devMSMs
 VignetteBuilder: knitr
