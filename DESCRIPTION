@@ -16,7 +16,7 @@ Authors@R: c(person("Isabella", "Stallworthy",
             person("Daniel", "Berry",
             email = "dberry@umn.edu",
             role = c("aut")))
-Description: What the package does (one paragraph).
+Description: Helper functions for devMSMs package to assist with data preparation and inspection.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
@@ -36,7 +36,9 @@ Imports:
     doRNG,
     devMSMs,
     dreamerr,
-    ranger
+    ranger,
+    dplyr,
+    forcats
 Suggests:
     missMethods,
     doParallel,
